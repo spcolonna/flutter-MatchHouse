@@ -50,5 +50,9 @@
         <key>NSAllowsArbitraryLoads</key>
         <true/>
     </dict>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Necesitamos tu ubicación para mostrarte las casas más cercanas a ti.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Necesitamos tu ubicación para mostrarte las casas más cercanas a ti.</string>
 </dict>
 </plist>

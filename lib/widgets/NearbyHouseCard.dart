@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../models/House.dart';
+
 class NearbyHouseCard extends StatelessWidget {
-  const NearbyHouseCard({super.key});
+  final House house;
+
+  const NearbyHouseCard({super.key, required this.house});
 
   @override
   Widget build(BuildContext context) {
@@ -17,17 +21,18 @@ class NearbyHouseCard extends StatelessWidget {
             Container(
               height: 120,
               color: Colors.deepPurple[100],
+              // En una app real, aquí usarías Image.network(house.imageUrl)
               child: const Center(child: Icon(Icons.house, color: Colors.white, size: 50)),
             ),
-            const Padding(
-              padding: EdgeInsets.all(8.0),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('\$ 250,000', style: TextStyle(fontWeight: FontWeight.bold)),
-                  SizedBox(height: 4),
-                  Text('Barrio Ejemplo', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  Text('a 1.2 km', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('\$${house.price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(house.address, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('a ${house.distanceKm} km', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),
             ),
