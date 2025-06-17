@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:matchhouse_flutter/screens/discover_page.dart';
 
+import 'MapPage.dart';
+
 class HomeScreen extends StatefulWidget {
   final String userEmail;
 
@@ -17,8 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Lista de las páginas que corresponden a cada pestaña
   static final List<Widget> _pages = <Widget>[
     const DiscoverPage(),
-    // Placeholders (contenidos de ejemplo) para las otras pestañas
-    const Center(child: Text('Aquí irá el Mapa', style: TextStyle(fontSize: 24))),
+    const MapPage(),
     const Center(child: Text('Aquí irán los Favoritos', style: TextStyle(fontSize: 24))),
     const Center(child: Text('Aquí irá el Perfil', style: TextStyle(fontSize: 24))),
   ];
