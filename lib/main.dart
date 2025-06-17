@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 import 'package:matchhouse_flutter/screens/WelcomeScreen.dart';
 
-// Punto de entrada de la aplicación.
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
-// Widget raíz de la aplicación.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

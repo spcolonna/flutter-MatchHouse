@@ -61,11 +61,10 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Perfil',
           ),
         ],
-        currentIndex: _selectedIndex, // Le dice a la barra cuál es la pestaña activa
-        onTap: _onItemTapped, // Función a llamar cuando se toca un ítem
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
 
-        // Estilos para que se vea bien
-        type: BottomNavigationBarType.fixed, // Mantiene el tamaño de los ítems fijo
+        type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.deepPurple,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
