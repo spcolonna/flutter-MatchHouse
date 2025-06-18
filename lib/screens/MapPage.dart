@@ -2,36 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:location/location.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import '../models/House.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
-
   @override
   State<MapPage> createState() => _MapPageState();
 }
 
 class _MapPageState extends State<MapPage> {
   bool _isLoading = true;
-  LatLng? _initialPosition;
+  LatLng? _currentPosition;
   String? _errorMessage;
+  List<House> _houses = [];
+  final MapController _mapController = MapController();
 
   @override
   void initState() {
     super.initState();
-    _determineInitialPosition();
+    _loadMapData();
   }
 
-  // Función modificada para usar la API del paquete 'location'
-  Future<void> _determineInitialPosition() async {
+  Future<void> _loadMapData() async {
     Location location = Location();
 
     try {
       bool serviceEnabled = await location.serviceEnabled();
       if (!serviceEnabled) {
         serviceEnabled = await location.requestService();
-        if (!serviceEnabled) {
-          throw Exception('Servicio de ubicación deshabilitado.');
-        }
+        if (!serviceEnabled) { throw Exception('Servicio de ubicación deshabilitado.'); }
       }
 
       PermissionStatus permissionGranted = await location.hasPermission();
@@ -50,17 +52,27 @@ class _MapPageState extends State<MapPage> {
         throw Exception('No se pudo obtener la ubicación.');
       }
 
-      setState(() {
-        //_initialPosition = LatLng(lat, lon);
-        _initialPosition = const LatLng(-34.9004, -56.1557);
-        _isLoading = false;
-      });
+      final userPosition = LatLng(lat, lon);
 
+      final url = Uri.parse('http://localhost:8080/house');
+      final response = await http.get(url).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> housesJson = json.decode(response.body);
+        setState(() {
+          //_currentPosition = userPosition;
+          _currentPosition = const LatLng(-34.9004, -56.1557);
+          _houses = housesJson.map((json) => House.fromJson(json)).toList();
+          _isLoading = false;
+        });
+      } else {
+        throw Exception('Error al cargar las casas: ${response.statusCode}');
+      }
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
-        _initialPosition = const LatLng(-34.90, -56.16); // Ubicación por defecto
+        _currentPosition = const LatLng(-34.90, -56.16);
       });
     }
   }
@@ -71,29 +83,75 @@ class _MapPageState extends State<MapPage> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // El resto de la UI del mapa no cambia
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text("Error: $_errorMessage", textAlign: TextAlign.center),
+        ),
+      );
+    }
+
+    final List<Marker> markers = [];
+    if (_currentPosition != null) {
+      print("My position");
+      print(_currentPosition?.longitude);
+      print(_currentPosition?.latitude);
+      markers.add(
+        Marker(
+          point: _currentPosition!,
+          width: 80,
+          height: 80,
+          child: const Icon(Icons.person_pin_circle, color: Colors.blue, size: 50),
+        ),
+      );
+    }
+
+    for (final house in _houses) {
+      print("House position");
+      print(house.point.longitude);
+      print(house.point.latitude);
+      markers.add(
+        Marker(
+          point: house.point,
+          width: 80,
+          height: 80,
+          child: GestureDetector(
+            onTap: () {
+              // Al tocar el marcador, mostramos un mensaje y centramos el mapa
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(house.title),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+              _mapController.move(house.point, 16.0);
+            },
+            child: Tooltip(
+              message: house.title,
+              child: Icon(
+                Icons.location_on,
+                color: Colors.deepPurple,
+                size: 40,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return FlutterMap(
+      mapController: _mapController,
       options: MapOptions(
-        initialCenter: _initialPosition!,
-        initialZoom: 15.0,
+        initialCenter: _currentPosition!,
+        initialZoom: 14.0,
       ),
       children: [
         TileLayer(
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.example.matchhouse_flutter',
         ),
-        MarkerLayer(
-          markers: [
-            Marker(
-              point: _initialPosition!,
-              child: const Icon(
-                Icons.person_pin_circle,
-                color: Colors.blue,
-                size: 50.0,
-              ),
-            ),
-          ],
-        ),
+        MarkerLayer(markers: markers), // Pasamos la lista completa de marcadores aquí
       ],
     );
   }

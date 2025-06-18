@@ -31,8 +31,8 @@ class NearbyHouseCard extends StatelessWidget {
                 children: [
                   Text('\$${house.price.toStringAsFixed(0)}', style: const TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
-                  Text(house.address, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                  Text('a ${house.distanceKm} km', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text("house.address", overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('a ${"house.distanceKm"} km', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),
             ),
