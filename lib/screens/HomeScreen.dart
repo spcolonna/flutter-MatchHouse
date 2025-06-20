@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/UserModel.dart';
+import '../services/IUserService.dart';
 import '../services/KtorUserService.dart';
 import 'ProfilePage.dart';
 import 'discover_page.dart';

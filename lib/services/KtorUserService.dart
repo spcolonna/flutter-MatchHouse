@@ -3,13 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import '../enums/UserRole.dart';
 import '../models/UserModel.dart';
-
-abstract class IUserService {
-  Future<UserModel> getUserProfile() {
-    throw UnimplementedError();
-  }
-  Future<http.Response> createUserProfile(UserModel user);
-}
+import 'IUserService.dart';
 
 class KtorUserService implements IUserService {
   final String _baseUrl = 'http://localhost:8080';
@@ -43,14 +37,6 @@ class KtorUserService implements IUserService {
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
     final body = json.encode(user.toMap());
 
-    print('[FLUTTER DEBUG] ---------------------------------');
-    print('[FLUTTER DEBUG] Iniciando Petición HTTP...');
-    print('[FLUTTER DEBUG] URL: $url');
-    print('[FLUTTER DEBUG] Método: POST');
-    print('[FLUTTER DEBUG] Headers: $headers');
-    print('[FLUTTER DEBUG] BODY A ENVIAR: $body');
-    print('[FLUTTER DEBUG] ---------------------------------');
-
     final response = await http.post(
       url,
       headers: headers,
@@ -60,5 +46,21 @@ class KtorUserService implements IUserService {
     ).timeout(const Duration(seconds: 10));
 
     return response;
+  }
+
+  @override
+  Future<void> addFavorite(String houseId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception('Usuario no autenticado para añadir favorito');
+
+    final url = Uri.parse('$_baseUrl/user/${user.uid}/favorites/$houseId');
+    final headers = {'Content-Type': 'application/json; charset=UTF-8'};
+
+    final response = await http.post(url, headers: headers)
+        .timeout(const Duration(seconds: 10));
+
+    if (response.statusCode != 200) {
+      throw Exception('Error al añadir a favoritos: ${response.body}');
+    }
   }
 }

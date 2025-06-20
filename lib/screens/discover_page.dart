@@ -22,17 +22,13 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   void initState() {
     super.initState();
-    _fetchNearbyHouses(); // Llamamos a la función para cargar datos al iniciar la página
+    _fetchNearbyHouses();
   }
 
   Future<void> _fetchNearbyHouses() async {
-    // Ponemos el try-catch general aquí para capturar cualquier error desde el principio
     try {
-      print('1. Iniciando carga de casas cercanas...');
       Location location = Location();
 
-      // Pedimos permiso y obtenemos la ubicación del usuario
-      print('2. Verificando servicio y permisos de ubicación...');
       bool serviceEnabled = await location.serviceEnabled();
       if (!serviceEnabled) {
         serviceEnabled = await location.requestService();
@@ -47,11 +43,22 @@ class _DiscoverPageState extends State<DiscoverPage> {
         }
       }
 
-      print('3. Permisos OK. Obteniendo coordenadas GPS...');
       LocationData locationData = await location.getLocation().timeout(
         const Duration(seconds: 15),
         onTimeout: () {
-          throw Exception('No se pudo obtener la ubicación (timeout).');
+          print('DEBUG: Timeout de ubicación. Usando ubicación harcodeada para Rivera y Soca.');
+          final Map<String, double> hardcodedLocation = {
+            "latitude": -34.9004,
+            "longitude": -56.1557,
+            "accuracy": 0.0,
+            "altitude": 0.0,
+            "speed": 0.0,
+            "speed_accuracy": 0.0,
+            "heading": 0.0,
+            "time": DateTime.now().millisecondsSinceEpoch.toDouble(),
+          };
+
+          return LocationData.fromMap(hardcodedLocation);
         },
       );
       final lat = locationData.latitude;
@@ -61,9 +68,6 @@ class _DiscoverPageState extends State<DiscoverPage> {
         throw Exception('No se pudo obtener las coordenadas.');
       }
 
-      print('4. Coordenadas obtenidas: lat=$lat, lon=$lon.');
-      print('5. Llamando al servidor Ktor...');
-
       final baseUrl = 'http://localhost:8080';
       final endpoint = '/house/nearby';
       final queryParameters = {
@@ -72,18 +76,14 @@ class _DiscoverPageState extends State<DiscoverPage> {
       };
 
       final uri = Uri.parse(baseUrl + endpoint).replace(queryParameters: queryParameters);
-      print('Llamando a la URL: $uri');
-
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
-
-      print('6. Respuesta recibida del servidor con código: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final List<dynamic> housesJson = json.decode(response.body);
         setState(() {
           _nearbyHouses = housesJson.map((json) => House.fromJson(json)).toList();
           _isLoading = false;
-          _errorMessage = null; // Limpiamos cualquier error previo
+          _errorMessage = null;
         });
       } else {
         throw Exception('El servidor respondió con un error: ${response.statusCode}');
@@ -117,7 +117,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         itemCount: _nearbyHouses.length,
         itemBuilder: (context, index) {
           final house = _nearbyHouses[index];
-          return NearbyHouseCard(house: house); // Le pasamos el objeto 'house'
+          return NearbyHouseCard(house: house);
         },
       ),
     );
@@ -142,7 +142,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
-          _buildContent(), // Usamos la función para construir el contenido dinámico
+          _buildContent(),
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),

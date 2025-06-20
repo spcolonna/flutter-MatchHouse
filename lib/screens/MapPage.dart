@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import '../models/House.dart';
+import '../widgets/HouseInfoBottomSheet.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -94,9 +95,6 @@ class _MapPageState extends State<MapPage> {
 
     final List<Marker> markers = [];
     if (_currentPosition != null) {
-      print("My position");
-      print(_currentPosition?.longitude);
-      print(_currentPosition?.latitude);
       markers.add(
         Marker(
           point: _currentPosition!,
@@ -108,9 +106,6 @@ class _MapPageState extends State<MapPage> {
     }
 
     for (final house in _houses) {
-      print("House position");
-      print(house.point.longitude);
-      print(house.point.latitude);
       markers.add(
         Marker(
           point: house.point,
@@ -118,14 +113,16 @@ class _MapPageState extends State<MapPage> {
           height: 80,
           child: GestureDetector(
             onTap: () {
-              // Al tocar el marcador, mostramos un mensaje y centramos el mapa
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(house.title),
-                  duration: const Duration(seconds: 2),
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                 ),
+                builder: (context) {
+                  return HouseInfoBottomSheet(house: house);
+                },
               );
-              _mapController.move(house.point, 16.0);
             },
             child: Tooltip(
               message: house.title,
@@ -151,7 +148,7 @@ class _MapPageState extends State<MapPage> {
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'com.example.matchhouse_flutter',
         ),
-        MarkerLayer(markers: markers), // Pasamos la lista completa de marcadores aquí
+        MarkerLayer(markers: markers),
       ],
     );
   }

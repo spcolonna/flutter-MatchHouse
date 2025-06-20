@@ -7,6 +7,7 @@ class House {
   final double area;
   final LatLng point;
 
+
   House({
     required this.id, required this.title, required this.price,
     required this.bedrooms, required this.bathrooms, required this.area,
@@ -22,7 +23,7 @@ class House {
       bedrooms: json['bedrooms'],
       bathrooms: json['bathrooms'],
       area: json['area'],
-      point: LatLng(pointData['lat'], pointData['lon']),
+      point: LatLng(pointData['lat'], pointData['lon'])
     );
   }
 }
