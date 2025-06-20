@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:matchhouse_flutter/screens/ProfilePage.dart';
 import 'package:matchhouse_flutter/screens/discover_page.dart';
 
 import 'MapPage.dart';
@@ -13,7 +14,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Variable para guardar el índice de la pestaña seleccionada
   int _selectedIndex = 0;
 
   // Lista de las páginas que corresponden a cada pestaña
@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const DiscoverPage(),
     const MapPage(),
     const Center(child: Text('Aquí irán los Favoritos', style: TextStyle(fontSize: 24))),
-    const Center(child: Text('Aquí irá el Perfil', style: TextStyle(fontSize: 24))),
+    const ProfilePage(),
   ];
 
   // Función que se llama cuando se toca una pestaña
