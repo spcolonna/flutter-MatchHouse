@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:matchhouse_flutter/screens/ProfilePage.dart';
-import 'package:matchhouse_flutter/screens/discover_page.dart';
-
+import '../models/UserModel.dart';
+import '../services/KtorUserService.dart';
+import 'ProfilePage.dart';
+import 'discover_page.dart';
 import 'MapPage.dart';
 
 class HomeScreen extends StatefulWidget {
-  final String userEmail;
-
-  const HomeScreen({super.key, required this.userEmail});
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -15,16 +14,46 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final IUserService _userService = KtorUserService();
 
-  // Lista de las páginas que corresponden a cada pestaña
-  static final List<Widget> _pages = <Widget>[
-    const DiscoverPage(),
-    const MapPage(),
-    const Center(child: Text('Aquí irán los Favoritos', style: TextStyle(fontSize: 24))),
-    const ProfilePage(),
-  ];
+  UserModel? _userProfile;
+  bool _isLoadingProfile = true;
 
-  // Función que se llama cuando se toca una pestaña
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final profile = await _userService.getUserProfile();
+      setState(() {
+        _userProfile = profile;
+        _isLoadingProfile = false;
+      });
+    } catch (e) {
+      print("Error cargando el perfil: $e");
+      setState(() {
+        _isLoadingProfile = false;
+      });
+    }
+  }
+
+  List<Widget> _buildPages() {
+    return [
+      const DiscoverPage(),
+      const MapPage(),
+      const Center(child: Text('Favoritos')),
+      if (_userProfile != null)
+        ProfilePage(user: _userProfile!, onProfileUpdated: _loadUserProfile)
+      else if (_isLoadingProfile)
+        const Center(child: CircularProgressIndicator())
+      else
+        const Center(child: Text("No se pudo cargar el perfil.")),
+    ];
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -34,12 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // El body ahora muestra la página que corresponda al índice seleccionado
-      body: _pages.elementAt(_selectedIndex),
-
-      // Aquí definimos la barra de navegación inferior
+      body: IndexedStack( // IndexedStack mantiene el estado de las pestañas al cambiar
+        index: _selectedIndex,
+        children: _buildPages(),
+      ),
       bottomNavigationBar: BottomNavigationBar(
-        // Lista de los botones de la barra
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -64,7 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.deepPurple,
         unselectedItemColor: Colors.grey,

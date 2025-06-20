@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
-
+import 'package:matchhouse_flutter/models/UserModel.dart';
 import 'package:matchhouse_flutter/screens/tabs/PersonalInfoTab.dart';
 import 'package:matchhouse_flutter/screens/tabs/SearchFiltersTab.dart';
 import 'package:matchhouse_flutter/screens/tabs/MyHousesTab.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final UserModel user;
+  final Future<void> Function() onProfileUpdated;
+
+  const ProfilePage({
+    super.key,
+    required this.user,
+    required this.onProfileUpdated
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -34,7 +41,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
-        // La propiedad 'bottom' del AppBar es el lugar perfecto para nuestra barra de pestañas
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.deepPurple,
@@ -47,12 +53,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
           ],
         ),
       ),
-      // El body del Scaffold será un TabBarView, que contiene las páginas de cada pestaña
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          // Cada hijo aquí corresponde a una de las pestañas en el mismo orden
-          PersonalInfoTab(),
+        children: [
+          PersonalInfoTab(user: widget.user, onProfileUpdated: widget.onProfileUpdated),
           SearchFiltersTab(),
           MyHousesTab(),
         ],

@@ -42,7 +42,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => HomeScreen(userEmail: userCredential.user?.email ?? 'Usuario'),
+            builder: (context) => HomeScreen(),
           ),
         );
       }
@@ -95,7 +95,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => HomeScreen(userEmail: userCredential.user?.email ?? 'Usuario'),
+            builder: (context) => HomeScreen(),
           ),
         );
       }

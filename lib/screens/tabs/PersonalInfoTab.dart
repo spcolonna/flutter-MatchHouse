@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
 import '../../enums/UserRole.dart';
+import '../../models/UserModel.dart';
+import '../../services/KtorUserService.dart';
+
 
 class PersonalInfoTab extends StatefulWidget {
-  const PersonalInfoTab({super.key});
+  final UserModel user;
+  final Future<void> Function() onProfileUpdated;
+
+  const PersonalInfoTab({
+    super.key,
+    required this.user,
+    required this.onProfileUpdated,
+  });
 
   @override
   State<PersonalInfoTab> createState() => _PersonalInfoTabState();
@@ -14,13 +20,22 @@ class PersonalInfoTab extends StatefulWidget {
 
 class _PersonalInfoTabState extends State<PersonalInfoTab> {
   final _formKey = GlobalKey<FormState>();
+  final IUserService _userService = KtorUserService();
 
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _agencyNameController = TextEditingController();
-
-  UserRole _selectedRole = UserRole.person;
+  late TextEditingController _nameController;
+  late TextEditingController _phoneController;
+  late TextEditingController _agencyNameController;
+  late UserRole _selectedRole;
   bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.user.name ?? '');
+    _phoneController = TextEditingController(text: widget.user.phoneNumber ?? '');
+    _agencyNameController = TextEditingController(text: widget.user.agencyName ?? '');
+    _selectedRole = widget.user.role;
+  }
 
   @override
   void dispose() {
@@ -34,59 +49,28 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
     if (_formKey.currentState!.validate() && !_isSaving) {
       setState(() { _isSaving = true; });
 
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error: Usuario no autenticado.')),
-        );
-        setState(() { _isSaving = false; });
-        return;
-      }
+      final userToUpdate = widget.user;
+      userToUpdate.name = _nameController.text.trim();
+      userToUpdate.phoneNumber = _phoneController.text.trim();
+      userToUpdate.role = _selectedRole;
+      userToUpdate.agencyName = _agencyNameController.text.trim().isNotEmpty
+          ? _agencyNameController.text.trim()
+          : null;
 
-      final userData = {
-        "id": user.uid,
-        "mail": user.email,
-        "name": _nameController.text,
-        "phoneNumber": _phoneController.text,
-        "role": _selectedRole == UserRole.agency ? "AGENCY" : "PERSON",
-        "agencyName": _agencyNameController.text.isNotEmpty ? _agencyNameController.text : null,
-      };
-
+      print('[FLUTTER DEBUG] Se va a llamar al servicio para guardar el perfil.');
       try {
-        final url = Uri.parse('http://localhost:8080/user');
+        await _userService.createUserProfile(userToUpdate);
+        await widget.onProfileUpdated();
 
-        print('Enviando a Ktor: ${jsonEncode(userData)}');
-
-        final response = await http.post(
-          url,
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-            // En el futuro, aquí añadirías el token de autenticación:
-            // 'Authorization': 'Bearer TU_ID_TOKEN_DE_FIREBASE'
-          },
-          body: jsonEncode(userData),
-        ).timeout(const Duration(seconds: 10));
-
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Perfil guardado con éxito en el servidor')),
-            );
-          }
-        } else {
-          final errorData = jsonDecode(response.body);
-          final errorMessage = errorData['error'] ?? 'Error desconocido del servidor.';
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error del servidor: $errorMessage')),
-            );
-          }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Perfil guardado con éxito')),
+          );
         }
-
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error de conexión: No se pudo contactar al servidor. ${e.toString()}')),
+            SnackBar(content: Text('Error al guardar el perfil: ${e.toString()}')),
           );
         }
       } finally {
@@ -99,11 +83,9 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
 
   @override
   Widget build(BuildContext context) {
-    // Usamos un Scaffold aquí para poder usar el FloatingActionButton
     return Scaffold(
       body: Form(
         key: _formKey,
-        // Usamos ListView para que el formulario sea scrollable si el teclado aparece
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
@@ -133,9 +115,11 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
             DropdownButtonFormField<UserRole>(
               value: _selectedRole,
               onChanged: (UserRole? newValue) {
-                setState(() {
-                  _selectedRole = newValue!;
-                });
+                if (newValue != null) {
+                  setState(() {
+                    _selectedRole = newValue;
+                  });
+                }
               },
               items: UserRole.values.map((UserRole role) {
                 return DropdownMenuItem<UserRole>(
@@ -157,14 +141,15 @@ class _PersonalInfoTabState extends State<PersonalInfoTab> {
                 ),
                 validator: (value) => (_selectedRole == UserRole.agency && (value == null || value.isEmpty)) ? 'Este campo es obligatorio para inmobiliarias' : null,
               ),
-            const SizedBox(height: 80), // Espacio extra para que el botón flotante no tape el último campo
+
+            const SizedBox(height: 80),
           ],
         ),
       ),
 
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _saveProfile,
-        label: _isSaving ? const Text('Guardando...') : const Text('Guardar'),
+        label: _isSaving ? const Text('Guardando...') : const Text('Guardar Cambios'),
         icon: _isSaving
             ? Container(
           width: 24,
