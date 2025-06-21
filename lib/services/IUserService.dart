@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 
+import '../models/House.dart';
 import '../models/UserModel.dart';
 
 abstract class IUserService {
@@ -8,4 +9,6 @@ abstract class IUserService {
   }
   Future<http.Response> createUserProfile(UserModel user);
   Future<void> addFavorite(String houseId);
+  Future<List<House>> getFavoriteHouses();
+  Future<void> removeFavorite(String houseId);
 }

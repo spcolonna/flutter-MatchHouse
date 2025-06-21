@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import '../enums/UserRole.dart';
+import '../models/House.dart';
 import '../models/UserModel.dart';
 import 'IUserService.dart';
 
@@ -62,5 +63,31 @@ class KtorUserService implements IUserService {
     if (response.statusCode != 200) {
       throw Exception('Error al añadir a favoritos: ${response.body}');
     }
+  }
+
+  @override
+  Future<List<House>> getFavoriteHouses() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception('Usuario no autenticado para añadir favorito');
+
+    final url = Uri.parse('$_baseUrl/user/${user.uid}/favorites');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> housesJson = json.decode(response.body);
+      return housesJson.map((json) => House.fromJson(json)).toList();
+    } else {
+      throw Exception('Error al cargar los favoritos: ${response.body}');
+    }
+  }
+
+  @override
+  Future<void> removeFavorite(String houseId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception('Usuario no autenticado para quitar favorito');
+
+    final url = Uri.parse('$_baseUrl/users/${user.uid}/favorites/$houseId');
+    final response = await http.delete(url);
+    if (response.statusCode != 200) throw Exception('Error al quitar favorito');
   }
 }

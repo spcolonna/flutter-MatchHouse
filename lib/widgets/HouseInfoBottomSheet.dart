@@ -6,8 +6,15 @@ import '../services/KtorUserService.dart';
 
 class HouseInfoBottomSheet extends StatelessWidget {
   final House house;
+  final bool isFavorite;
+  final VoidCallback onFavoriteToggle;
 
-  const HouseInfoBottomSheet({super.key, required this.house});
+  const HouseInfoBottomSheet({
+    super.key,
+    required this.house,
+    required this.isFavorite,
+    required this.onFavoriteToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -64,37 +71,49 @@ class HouseInfoBottomSheet extends StatelessWidget {
                       onPressed: () async {
                         final IUserService userService = KtorUserService();
 
-                        try {
-                          await userService.addFavorite(house.id);
+                        if(isFavorite){
+                          try {
+                            await userService.addFavorite(house.id);
 
-                          if (!context.mounted) return;
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('${house.title} añadido a favoritos!')),
-                          );
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('${house.title} añadido a favoritos!')),
+                            );
 
-                        } catch (e) {
-                          if (!context.mounted) return;
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: ${e.toString()}')),
-                          );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: ${e.toString()}')),
+                            );
+                          }
+                        } else {
+                          try {
+                            await userService.removeFavorite(house.id);
+
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('${house.title} eliminado de favoritos!')),
+                            );
+
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: ${e.toString()}')),
+                            );
+                          }
                         }
-                      },
-                      icon: const Icon(Icons.favorite_border),
-                      label: const Text('Favorito'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        foregroundColor: Colors.deepPurple,
-                        side: const BorderSide(color: Colors.deepPurple, width: 1.5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
 
-                        textStyle: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                        onFavoriteToggle();
+                      },
+                      icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+                      label: Text(isFavorite ? 'Quitar Favorito' : 'Favorito'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: isFavorite ? Colors.red : Colors.deepPurple,
+                        side: BorderSide(color: isFavorite ? Colors.red : Colors.deepPurple),
                       ),
                     ),
                   ),

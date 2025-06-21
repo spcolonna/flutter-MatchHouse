@@ -9,7 +9,10 @@ import '../models/House.dart';
 import '../widgets/HouseInfoBottomSheet.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key});
+  final List<House> favoriteHouses;
+  final Function(String houseId) onFavoriteToggle;
+
+  const MapPage({super.key, required this.favoriteHouses, required this.onFavoriteToggle});
   @override
   State<MapPage> createState() => _MapPageState();
 }
@@ -106,31 +109,33 @@ class _MapPageState extends State<MapPage> {
     }
 
     for (final house in _houses) {
+      final bool isFavorite = widget.favoriteHouses.any((favHouse) => favHouse.id == house.id);
+
       markers.add(
         Marker(
           point: house.point,
-          width: 80,
-          height: 80,
           child: GestureDetector(
             onTap: () {
               showModalBottomSheet(
                 context: context,
-                isScrollControlled: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
                 builder: (context) {
-                  return HouseInfoBottomSheet(house: house);
+                  // Le pasamos el estado de favorito y la función de toggle al popup
+                  return HouseInfoBottomSheet(
+                    house: house,
+                    isFavorite: isFavorite,
+                    onFavoriteToggle: () {
+                      widget.onFavoriteToggle(house.id);
+                      Navigator.pop(context); // Cierra el popup después de la acción
+                    },
+                  );
                 },
               );
             },
-            child: Tooltip(
-              message: house.title,
-              child: Icon(
-                Icons.location_on,
-                color: Colors.deepPurple,
-                size: 40,
-              ),
+            child: Icon(
+              // El ícono ahora depende de si es favorito o no
+              isFavorite ? Icons.favorite : Icons.location_on,
+              color: isFavorite ? Colors.red : Colors.deepPurple,
+              size: 40,
             ),
           ),
         ),

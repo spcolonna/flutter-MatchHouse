@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import '../models/House.dart';
 import '../models/UserModel.dart';
 import '../services/IUserService.dart';
 import '../services/KtorUserService.dart';
+import 'FavoritesPage.dart';
 import 'ProfilePage.dart';
 import 'discover_page.dart';
 import 'MapPage.dart';
@@ -19,18 +21,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   UserModel? _userProfile;
   bool _isLoadingProfile = true;
+  List<House> _favoriteHouses = [];
 
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
+    _loadUserData();
   }
 
-  Future<void> _loadUserProfile() async {
+  Future<void> _loadUserData() async {
     try {
       final profile = await _userService.getUserProfile();
+      final favoriteIds = await _userService.getFavoriteHouses();
       setState(() {
         _userProfile = profile;
+        _favoriteHouses = favoriteIds;
         _isLoadingProfile = false;
       });
     } catch (e) {
@@ -41,13 +46,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _toggleFavorite(String houseId) => _loadUserData();
+
   List<Widget> _buildPages() {
     return [
       const DiscoverPage(),
-      const MapPage(),
-      const Center(child: Text('Favoritos')),
+      MapPage(favoriteHouses: _favoriteHouses, onFavoriteToggle: _toggleFavorite),
+      FavoritesPage(favoriteHouses: _favoriteHouses, onFavoriteToggle: _toggleFavorite),
       if (_userProfile != null)
-        ProfilePage(user: _userProfile!, onProfileUpdated: _loadUserProfile)
+        ProfilePage(user: _userProfile!, onProfileUpdated: _loadUserData)
       else if (_isLoadingProfile)
         const Center(child: CircularProgressIndicator())
       else
