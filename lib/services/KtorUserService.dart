@@ -5,6 +5,7 @@ import '../enums/UserRole.dart';
 import '../models/House.dart';
 import '../models/UserModel.dart';
 import 'IUserService.dart';
+import 'package:latlong2/latlong.dart';
 
 class KtorUserService implements IUserService {
   final String _baseUrl = 'http://localhost:8080';
@@ -89,5 +90,78 @@ class KtorUserService implements IUserService {
     final url = Uri.parse('$_baseUrl/users/${user.uid}/favorites/$houseId');
     final response = await http.delete(url);
     if (response.statusCode != 200) throw Exception('Error al quitar favorito');
+  }
+
+
+  @override
+  Future<List<House>> getMyHouses() async {
+    print('[KTOR SIM] Obteniendo mis casas...');
+    await Future.delayed(const Duration(seconds: 1));
+    // Devolvemos una lista de ejemplo para probar la UI
+    return [
+      House(id: 'house1', title: 'Mi Chalet en Carrasco', price: 350000, bedrooms: 4, bathrooms: 3, area: 220, point: LatLng(-34.88, -56.05), imageUrls: []),
+      House(id: 'house2', title: 'Mi Apartamento en Pocitos', price: 180000, bedrooms: 2, bathrooms: 1, area: 75, point: LatLng(-34.90, -56.15), imageUrls: []),
+    ];
+  }
+
+  @override
+  Future<void> createHouse(House house) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('Usuario no autenticado. No se puede crear la casa.');
+    }
+    final ownerId = user.uid;
+    final url = Uri.parse('$_baseUrl/house');
+
+    final requestBody = {
+      'ownerId': ownerId,
+      'lat': house.point.latitude,
+      'lon': house.point.longitude,
+      'title': house.title,
+      'price': house.price,
+      'bedrooms': house.bedrooms,
+      'bathrooms': house.bathrooms,
+      'area': house.area,
+      // Nota: No enviamos 'imageUrls' porque tu CreateHouseRequest no lo tiene.
+    };
+
+    print('[KTOR CALL] Enviando a POST $url');
+    print('[KTOR CALL] Body: ${json.encode(requestBody)}');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: json.encode(requestBody),
+      ).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('Casa creada con éxito en el servidor.');
+      } else {
+        print('Error del servidor: ${response.statusCode} - ${response.body}');
+        throw Exception('Error al crear la casa en el servidor: ${response.body}');
+      }
+    } catch (e) {
+      print('Error de conexión al crear casa: $e');
+      throw Exception('No se pudo conectar al servidor. Inténtalo de nuevo.');
+    }
+  }
+
+  @override
+  Future<void> updateHouse(House house) async {
+    print('[KTOR SIM] Actualizando casa: ${house.id}');
+    await Future.delayed(const Duration(seconds: 1));
+    // Aquí iría la llamada http.put a Ktor
+    print('Éxito!');
+  }
+
+  @override
+  Future<void> deleteHouse(String houseId) async {
+    print('[KTOR SIM] Eliminando casa: $houseId');
+    await Future.delayed(const Duration(seconds: 1));
+    // Aquí iría la llamada http.delete a Ktor
+    print('Éxito!');
   }
 }

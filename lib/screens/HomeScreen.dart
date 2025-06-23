@@ -31,18 +31,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadUserData() async {
     try {
-      final profile = await _userService.getUserProfile();
-      final favoriteIds = await _userService.getFavoriteHouses();
-      setState(() {
-        _userProfile = profile;
-        _favoriteHouses = favoriteIds;
-        _isLoadingProfile = false;
-      });
+      final results = await Future.wait([
+        _userService.getUserProfile(),
+        _userService.getFavoriteHouses(),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _userProfile = results[0] as UserModel;
+          _favoriteHouses = results[1] as List<House>;
+          _isLoadingProfile = false;
+        });
+      }
     } catch (e) {
       print("Error cargando el perfil: $e");
-      setState(() {
-        _isLoadingProfile = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoadingProfile = false;
+        });
+      }
     }
   }
 

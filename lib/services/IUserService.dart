@@ -11,4 +11,9 @@ abstract class IUserService {
   Future<void> addFavorite(String houseId);
   Future<List<House>> getFavoriteHouses();
   Future<void> removeFavorite(String houseId);
+
+  Future<List<House>> getMyHouses();
+  Future<void> createHouse(House house);
+  Future<void> updateHouse(House house);
+  Future<void> deleteHouse(String houseId);
 }
