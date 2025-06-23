@@ -95,13 +95,19 @@ class KtorUserService implements IUserService {
 
   @override
   Future<List<House>> getMyHouses() async {
-    print('[KTOR SIM] Obteniendo mis casas...');
-    await Future.delayed(const Duration(seconds: 1));
-    // Devolvemos una lista de ejemplo para probar la UI
-    return [
-      House(id: 'house1', title: 'Mi Chalet en Carrasco', price: 350000, bedrooms: 4, bathrooms: 3, area: 220, point: LatLng(-34.88, -56.05), imageUrls: []),
-      House(id: 'house2', title: 'Mi Apartamento en Pocitos', price: 180000, bedrooms: 2, bathrooms: 1, area: 75, point: LatLng(-34.90, -56.15), imageUrls: []),
-    ];
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception('Usuario no autenticado');
+
+    final url = Uri.parse('$_baseUrl/house/${user.uid}');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> housesJson = json.decode(response.body);
+      return housesJson.map((json) => House.fromJson(json)).toList();
+    } else {
+      throw Exception('Error al cargar mis casas: ${response.body}');
+    }
   }
 
   @override
