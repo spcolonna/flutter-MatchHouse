@@ -1,13 +1,13 @@
 import 'dart:async';
-import 'package:location/location.dart'; // <-- 1. USAMOS ESTE PAQUETE
+import 'package:location/location.dart';
 import 'package:latlong2/latlong.dart';
-import 'IUserService.dart';
+import 'IHouseService.dart';
 
 class LocationService {
   StreamSubscription<LocationData>? _positionStreamSubscription;
   bool _isTracking = false;
 
-  Future<void> startTracking(IUserService userService) async {
+  Future<void> startTracking(IHouseService houseService) async {
     if (_isTracking) {
       print('[LocationService] El seguimiento ya está activo.');
       return;
@@ -33,7 +33,7 @@ class LocationService {
       if (currentLocation.latitude != null && currentLocation.longitude != null) {
         print('[LocationService] Nueva ubicación detectada: ${currentLocation.latitude}, ${currentLocation.longitude}');
 
-        userService.sendLocationPing(
+        houseService.sendLocationPing(
           LatLng(currentLocation.latitude!, currentLocation.longitude!),
         );
       }

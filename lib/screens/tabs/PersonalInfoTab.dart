@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../enums/UserRole.dart';
 import '../../models/UserModel.dart';
-import '../../services/IUserService.dart';
+import '../../services/IProfileService.dart';
 import '../../services/KtorUserService.dart';
 
 

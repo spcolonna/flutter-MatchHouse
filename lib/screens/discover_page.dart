@@ -5,10 +5,10 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../models/House.dart';
+import '../services/IHouseService.dart';
+import '../services/KtorHouseService.dart';
 import '../widgets/NearbyHouseCard.dart';
 import '../widgets/DiscoveryCard.dart';
-import '../services/IUserService.dart';
-import '../services/KtorUserService.dart';
 
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({super.key});
@@ -18,7 +18,7 @@ class DiscoverPage extends StatefulWidget {
 }
 
 class _DiscoverPageState extends State<DiscoverPage> {
-  final IUserService _userService = KtorUserService();
+  final IHouseService _houseService = KtorHouseService();
   final CardSwiperController _swiperController = CardSwiperController();
 
   bool _isLoading = true;
@@ -51,8 +51,8 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final userLocation = LatLng(lat, lon);
 
       final results = await Future.wait([
-        _userService.getNearbyHouses(userLocation),
-        _userService.getDiscoveryHouses(),
+        _houseService.getNearbyHouses(userLocation),
+        _houseService.getDiscoveryHouses(),
       ]);
 
       if (mounted) {

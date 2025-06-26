@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:matchhouse_flutter/models/House.dart';
 import 'package:matchhouse_flutter/screens/tabs/myHousesSubScreens/MapPickerPage.dart';
-import 'package:matchhouse_flutter/services/IUserService.dart'; // Importamos la interfaz
+import 'package:matchhouse_flutter/services/IProfileService.dart'; // Importamos la interfaz
 import 'package:matchhouse_flutter/services/KtorUserService.dart'; // y la implementación
 
 class AddEditHousePage extends StatefulWidget {

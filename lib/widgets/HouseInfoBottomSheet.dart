@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:matchhouse_flutter/models/House.dart';
 
-import '../services/IUserService.dart';
+import '../services/IProfileService.dart';
 import '../services/KtorUserService.dart';
 
 class HouseInfoBottomSheet extends StatelessWidget {

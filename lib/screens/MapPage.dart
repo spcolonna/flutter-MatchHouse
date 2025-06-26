@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:location/location.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 import '../models/House.dart';
-import '../services/IUserService.dart';
-import '../services/KtorUserService.dart';
+import '../services/IHouseService.dart';
+import '../services/KtorHouseService.dart';
 import '../widgets/HouseInfoBottomSheet.dart';
 
 class MapPage extends StatefulWidget {
@@ -20,7 +18,7 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  final IUserService _userService = KtorUserService();
+  final IHouseService _houseService = KtorHouseService();
   bool _isLoading = true;
   LatLng? _currentPosition;
   String? _errorMessage;
@@ -61,7 +59,7 @@ class _MapPageState extends State<MapPage> {
 
       final userPosition = LatLng(lat, lon);
 
-      final allHouses = await _userService.getAllHouses();
+      final allHouses = await _houseService.getAllHouses();
 
       if (mounted) {
         setState(() {
