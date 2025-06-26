@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import '../models/House.dart';
+import '../services/IUserService.dart';
+import '../services/KtorUserService.dart';
 import '../widgets/HouseInfoBottomSheet.dart';
 
 class MapPage extends StatefulWidget {
@@ -18,6 +20,7 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
+  final IUserService _userService = KtorUserService();
   bool _isLoading = true;
   LatLng? _currentPosition;
   String? _errorMessage;
@@ -58,26 +61,24 @@ class _MapPageState extends State<MapPage> {
 
       final userPosition = LatLng(lat, lon);
 
-      final url = Uri.parse('http://localhost:8080/house');
-      final response = await http.get(url).timeout(const Duration(seconds: 15));
+      final allHouses = await _userService.getAllHouses();
 
-      if (response.statusCode == 200) {
-        final List<dynamic> housesJson = json.decode(response.body);
+      if (mounted) {
         setState(() {
           //_currentPosition = userPosition;
-          _currentPosition = const LatLng(-34.9004, -56.1557);
-          _houses = housesJson.map((json) => House.fromJson(json)).toList();
+          _currentPosition = const LatLng(-34.90, -56.16);
+          _houses = allHouses;
           _isLoading = false;
         });
-      } else {
-        throw Exception('Error al cargar las casas: ${response.statusCode}');
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-        _currentPosition = const LatLng(-34.90, -56.16);
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isLoading = false;
+          _currentPosition = const LatLng(-34.90, -56.16);
+        });
+      }
     }
   }
 
