@@ -12,12 +12,14 @@ class MyHousesTab extends StatefulWidget {
 }
 
 class _MyHousesTabState extends State<MyHousesTab> {
+  // Asumo que usarás el IProfileService para getMyHouses
   final IProfileService _userService = KtorUserService();
   late Future<List<House>> _myHousesFuture;
 
   @override
   void initState() {
     super.initState();
+    // Asumo que el servicio que tiene getMyHouses es IProfileService, ajústalo si lo moviste a IHouseService
     _myHousesFuture = _userService.getMyHouses();
   }
 
@@ -35,7 +37,6 @@ class _MyHousesTabState extends State<MyHousesTab> {
   }
 
   void _deleteHouse(String houseId) async {
-    // Popup de confirmación
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -53,7 +54,10 @@ class _MyHousesTabState extends State<MyHousesTab> {
         await _userService.deleteHouse(houseId);
         _refreshHouses();
       } catch (e) {
-        // Mostrar error
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Error al eliminar: ${e.toString()}")));
+        }
       }
     }
   }
@@ -79,10 +83,41 @@ class _MyHousesTabState extends State<MyHousesTab> {
             itemCount: myHouses.length,
             itemBuilder: (context, index) {
               final house = myHouses[index];
+
+              // --- NUEVO: WIDGET DINÁMICO PARA LA IMAGEN ---
+              Widget leadingImage;
+              // Comprobamos si la lista de URLs de la casa tiene al menos una imagen.
+              if (house.imageUrls.isNotEmpty) {
+                // Si hay imágenes, mostramos la primera.
+                leadingImage = SizedBox(
+                  width: 56, // Un buen tamaño para el leading de un ListTile
+                  height: 56,
+                  child: ClipRRect( // Para redondear las esquinas de la imagen
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Image.network(
+                      house.imageUrls.first, // Usamos la primera imagen de la lista
+                      fit: BoxFit.cover, // Para que la imagen cubra el espacio
+                      // Muestra un spinner mientras la imagen carga
+                      loadingBuilder: (context, child, progress) {
+                        return progress == null ? child : const Center(child: CircularProgressIndicator());
+                      },
+                      // Muestra un ícono de error si la imagen falla al cargar
+                      errorBuilder: (context, error, stack) {
+                        return const Icon(Icons.broken_image, color: Colors.grey);
+                      },
+                    ),
+                  ),
+                );
+              } else {
+                // Si no hay imágenes, mostramos el ícono de casa por defecto.
+                leadingImage = const Icon(Icons.house_siding, size: 40, color: Colors.deepPurple);
+              }
+
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
-                  leading: const Icon(Icons.house_siding, size: 40, color: Colors.deepPurple),
+                  // --- Usamos nuestro widget de imagen dinámico aquí ---
+                  leading: leadingImage,
                   title: Text(house.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text('\$${house.price}'),
                   trailing: Row(

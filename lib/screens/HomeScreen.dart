@@ -53,7 +53,45 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _toggleFavorite(String houseId) => _loadUserData();
+
+  void _toggleFavorite(String houseId) async {
+    if (_userProfile == null) {
+      print("Error: No se puede modificar favoritos sin un perfil de usuario.");
+      return;
+    }
+
+    final isCurrentlyFavorite = _favoriteHouses.any((house) => house.id == houseId);
+
+    print('Cambiando estado de favorito para la casa $houseId. Actualmente es favorito: $isCurrentlyFavorite');
+
+    try {
+      if (isCurrentlyFavorite) {
+        await _userService.removeFavorite(houseId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Eliminado de favoritos.'), duration: Duration(seconds: 1))
+          );
+        }
+      } else {
+        await _userService.addFavorite(houseId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('¡Añadido a favoritos!'), duration: Duration(seconds: 1))
+          );
+        }
+      }
+
+      _loadUserData();
+
+    } catch (e) {
+      print("Error al hacer toggle de favorito: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error al actualizar favoritos: ${e.toString()}'))
+        );
+      }
+    }
+  }
 
   List<Widget> _buildPages() {
     return [

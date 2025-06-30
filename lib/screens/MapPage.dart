@@ -7,6 +7,7 @@ import '../models/House.dart';
 import '../services/IHouseService.dart';
 import '../services/KtorHouseService.dart';
 import '../widgets/HouseInfoBottomSheet.dart';
+import '../widgets/HouseMapMarker.dart';
 
 class MapPage extends StatefulWidget {
   final List<House> favoriteHouses;
@@ -112,29 +113,32 @@ class _MapPageState extends State<MapPage> {
 
       markers.add(
         Marker(
+          width: 40,
+          height: 40,
           point: house.point,
           child: GestureDetector(
             onTap: () {
               showModalBottomSheet(
                 context: context,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
                 builder: (context) {
-                  // Le pasamos el estado de favorito y la función de toggle al popup
                   return HouseInfoBottomSheet(
                     house: house,
                     isFavorite: isFavorite,
                     onFavoriteToggle: () {
                       widget.onFavoriteToggle(house.id);
-                      Navigator.pop(context); // Cierra el popup después de la acción
+                      Navigator.pop(context);
                     },
                   );
                 },
               );
             },
-            child: Icon(
-              // El ícono ahora depende de si es favorito o no
-              isFavorite ? Icons.favorite : Icons.location_on,
-              color: isFavorite ? Colors.red : Colors.deepPurple,
-              size: 40,
+            // --- AQUÍ USAMOS NUESTRO NUEVO WIDGET PERSONALIZADO ---
+            child: HouseMapMarker(
+              house: house,
+              isFavorite: isFavorite,
             ),
           ),
         ),

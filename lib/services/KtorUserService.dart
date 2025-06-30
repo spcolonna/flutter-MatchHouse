@@ -93,7 +93,7 @@ class KtorUserService implements IProfileService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('Usuario no autenticado para quitar favorito');
 
-    final url = Uri.parse('$_baseUrl/users/${user.uid}/favorites/$houseId');
+    final url = Uri.parse('$_baseUrl/user/${user.uid}/favorites/$houseId');
     final response = await http.delete(url);
     if (response.statusCode != 200) throw Exception('Error al quitar favorito');
   }
