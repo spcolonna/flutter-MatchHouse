@@ -21,7 +21,7 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_imagesPrecached) {
+    if (!_imagesPrecached && widget.house.imageUrls.isNotEmpty) {
       for (final imageUrl in widget.house.imageUrls) {
         precacheImage(NetworkImage(imageUrl), context);
       }
@@ -32,11 +32,12 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
   @override
   void initState() {
     super.initState();
-    // Escuchamos los cambios de página para actualizar los puntos indicadores
     _pageController.addListener(() {
-      setState(() {
-        _currentImageIndex = _pageController.page?.round() ?? 0;
-      });
+      if (_pageController.page?.round() != _currentImageIndex) {
+        setState(() {
+          _currentImageIndex = _pageController.page?.round() ?? 0;
+        });
+      }
     });
   }
 
@@ -49,100 +50,130 @@ class _HouseDetailPageState extends State<HouseDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // --- Barra de Aplicación con la Galería de Imágenes ---
-          SliverAppBar(
-            expandedHeight: 300.0,
-            pinned: true,
-            flexibleSpace: FlexibleSpaceBar(
-              // El título ahora está vacío aquí, lo moveremos abajo
-              title: const Text(''),
-              background: _buildImageGallery(),
-            ),
-          ),
+      // Usamos un Stack para poder poner el botón de back sobre el CustomScrollView
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 300.0,
+                pinned: true,
+                stretch: true, // Efecto de estiramiento al hacer overscroll
+                // Hacemos el AppBar transparente para que la imagen ocupe todo
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                // Quitamos el botón de back por defecto para poner el nuestro
+                automaticallyImplyLeading: false,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: _buildImageGallery(),
+                ),
+              ),
 
-          // --- Contenido Principal de la Página ---
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // --- 1. TÍTULO DE LA CASA (NUEVA UBICACIÓN) ---
-                      Text(
-                        widget.house.title,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // --- Precio ---
-                      Text(
-                        '\$${widget.house.price}',
-                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          color: Colors.deepPurple,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // --- Detalles (Dormitorios, Baños, Área) ---
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+              // Contenido Principal de la Página
+              SliverList(
+                delegate: SliverChildListDelegate(
+                  [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildDetailItem(context, Icons.bed_outlined, '${widget.house.bedrooms}', 'Dorm.'),
-                          _buildDetailItem(context, Icons.shower_outlined, '${widget.house.bathrooms}', 'Baños'),
-                          _buildDetailItem(context, Icons.square_foot_outlined, '${widget.house.area} m²', 'Área'),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      const Divider(),
-                      const SizedBox(height: 16),
-
-                      // --- 2. MINIMAPA DE UBICACIÓN ---
-                      Text(
-                        'Ubicación',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 200,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: FlutterMap(
-                            options: MapOptions(
-                              initialCenter: widget.house.point,
-                              initialZoom: 16.0,
-                              // Limitamos la interacción para que funcione como un mapa de vista previa
-                              interactionOptions: const InteractionOptions(
-                                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                              ),
+                          Text(
+                            widget.house.title,
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '\$${widget.house.price}',
+                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                              color: Colors.deepPurple,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
-                              MarkerLayer(
-                                markers: [
-                                  Marker(
-                                    point: widget.house.point,
-                                    child: const Icon(Icons.location_on, size: 50, color: Colors.red),
+                              _buildDetailItem(context, Icons.bed_outlined, '${widget.house.bedrooms}', 'Dorm.'),
+                              _buildDetailItem(context, Icons.shower_outlined, '${widget.house.bathrooms}', 'Baños'),
+                              _buildDetailItem(context, Icons.square_foot_outlined, '${widget.house.area} m²', 'Área'),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          const Divider(),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Ubicación',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 200,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: FlutterMap(
+                                options: MapOptions(
+                                  initialCenter: widget.house.point,
+                                  initialZoom: 16.0,
+                                  interactionOptions: const InteractionOptions(
+                                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                                  ),
+                                ),
+                                children: [
+                                  TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+                                  MarkerLayer(
+                                    markers: [
+                                      Marker(
+                                        point: widget.house.point,
+                                        child: const Icon(Icons.location_on, size: 50, color: Colors.red),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                          // Espacio extra para que el botón flotante no tape el contenido
+                          const SizedBox(height: 100),
+                        ],
                       ),
-                    ],
-                  ),
-                )
-              ],
+                    )
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // --- 1. NUEVO BOTÓN DE "BACK" PERSONALIZADO ---
+          // Lo ponemos en un Positioned para que flote sobre la imagen
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10, // Se ajusta al notch del teléfono
+            left: 10,
+            child: CircleAvatar(
+              backgroundColor: Colors.white.withOpacity(0.8),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
             ),
           ),
         ],
+      ),
+      // --- 2. NUEVO BOTÓN FLOTANTE PARA "CONTACTAR" ---
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // Lógica para contactar
+          print('Botón de Contactar presionado para la casa: ${widget.house.id}');
+          // TODO: Llamar al servicio para registrar la métrica y enviar notificación a Ktor
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Contactando al propietario... (simulación)')),
+          );
+        },
+        label: const Text('Contactar'),
+        icon: const Icon(Icons.chat_bubble_outline),
+        backgroundColor: Colors.deepPurple,
       ),
     );
   }

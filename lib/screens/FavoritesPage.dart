@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/House.dart';
+import 'package:matchhouse_flutter/models/House.dart';
+import 'package:matchhouse_flutter/screens/HouseDetailPage.dart';
+
+import 'HouseDetailPage.dart'; // <-- 1. AÑADE LA IMPORTACIÓN A LA PÁGINA DE DETALLE
 
 class FavoritesPage extends StatelessWidget {
   final List<House> favoriteHouses;
@@ -14,12 +17,7 @@ class FavoritesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mis Favoritos'),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 1,
-        foregroundColor: Colors.black,
-      ),
+      appBar: AppBar(title: const Text('Mis Favoritos')),
       body: favoriteHouses.isEmpty
           ? const Center(
         child: Padding(
@@ -36,25 +34,20 @@ class FavoritesPage extends StatelessWidget {
         itemCount: favoriteHouses.length,
         itemBuilder: (context, index) {
           final house = favoriteHouses[index];
-
-          // --- NUEVO: WIDGET DINÁMICO PARA LA IMAGEN DE PORTADA ---
           Widget leadingImage;
-          // Comprobamos si la lista de URLs de la casa tiene al menos una imagen.
+
           if (house.imageUrls.isNotEmpty) {
-            // Si hay imágenes, mostramos la primera.
             leadingImage = SizedBox(
-              width: 80, // Le damos un tamaño generoso
+              width: 80,
               height: 80,
-              child: ClipRRect( // Para redondear las esquinas
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(8.0),
                 child: Image.network(
-                  house.imageUrls.first, // Usamos la primera imagen de la lista
-                  fit: BoxFit.cover, // Para que la imagen cubra todo el espacio
-                  // Muestra un spinner mientras la imagen carga
+                  house.imageUrls.first,
+                  fit: BoxFit.cover,
                   loadingBuilder: (context, child, progress) {
                     return progress == null ? child : const Center(child: CircularProgressIndicator());
                   },
-                  // Muestra un ícono de error si la imagen falla al cargar
                   errorBuilder: (context, error, stack) {
                     return const Icon(Icons.broken_image_outlined, color: Colors.grey);
                   },
@@ -62,7 +55,6 @@ class FavoritesPage extends StatelessWidget {
               ),
             );
           } else {
-            // Si no hay imágenes, mostramos un placeholder.
             leadingImage = Container(
               width: 80,
               height: 80,
@@ -80,14 +72,25 @@ class FavoritesPage extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 2,
             child: ListTile(
+              // --- 2. AÑADIMOS LA ACCIÓN onTap AL LISTTILE ---
+              onTap: () {
+                // Navegamos a la pantalla de detalle al tocar la tarjeta
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HouseDetailPage(house: house),
+                  ),
+                );
+              },
+              // ----------------------------------------------------
               contentPadding: const EdgeInsets.all(10),
-              // --- Usamos nuestro widget de imagen dinámico aquí ---
               leading: leadingImage,
               title: Text(house.title, style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text('\$${house.price}'),
               trailing: IconButton(
                 icon: const Icon(Icons.favorite, color: Colors.red),
                 tooltip: 'Quitar de favoritos',
+                // Esta lógica no cambia, el corazón sigue quitando de favoritos
                 onPressed: () => onFavoriteToggle(house.id),
               ),
             ),
