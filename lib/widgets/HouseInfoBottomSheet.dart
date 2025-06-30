@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:matchhouse_flutter/models/House.dart';
 
+import '../screens/HouseDetailPage.dart';
+
 class HouseInfoBottomSheet extends StatelessWidget {
   final House house;
   final bool isFavorite;
@@ -88,11 +90,21 @@ class HouseInfoBottomSheet extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton.icon(
+                      // --- LÓGICA DE NAVEGACIÓN CORREGIDA ---
                       onPressed: () {
-                        print('Viendo detalles de la casa: ${house.id}');
+                        // Primero, cerramos el BottomSheet para que no quede abierto debajo
                         Navigator.pop(context);
-                        // TODO: Navegar a la pantalla de detalle de la casa
+
+                        // Luego, navegamos a la nueva pantalla de detalle,
+                        // pasándole el objeto 'house' completo.
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HouseDetailPage(house: house),
+                          ),
+                        );
                       },
+                      // ------------------------------------
                       icon: const Icon(Icons.visibility_outlined),
                       label: const Text('Ver Casa'),
                       style: ElevatedButton.styleFrom(
