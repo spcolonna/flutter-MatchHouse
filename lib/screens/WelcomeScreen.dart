@@ -156,12 +156,28 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                Image.asset(
+                  'assets/logo/NidoLogo.jpeg',
+                  height: 120,
+                ),
+                const SizedBox(height: 16),
+
                 const Text(
-                  'Bienvenido a MatchHouse',
+                  'Nido',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 28.0,
+                    fontSize: 42.0,
                     fontWeight: FontWeight.bold,
+                    // Para un estilo más elegante, considera usar el paquete google_fonts
+                    // fontFamily: GoogleFonts.lato().fontFamily,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Encuentra tu lugar ideal',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[600],
                   ),
                 ),
                 const SizedBox(height: 48.0),
