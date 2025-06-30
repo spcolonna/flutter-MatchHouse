@@ -17,7 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  final IUserService _userService = KtorUserService();
+  final IProfileService _userService = KtorUserService();
 
   UserModel? _userProfile;
   bool _isLoadingProfile = true;

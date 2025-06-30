@@ -69,7 +69,7 @@ class HouseInfoBottomSheet extends StatelessWidget {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        final IUserService userService = KtorUserService();
+                        final IProfileService userService = KtorUserService();
 
                         if(isFavorite){
                           try {

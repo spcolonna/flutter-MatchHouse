@@ -7,7 +7,7 @@ import '../models/House.dart';
 import '../models/UserModel.dart';
 import 'IProfileService.dart';
 
-class KtorUserService implements IUserService {
+class KtorUserService implements IProfileService {
   String get _baseUrl {
     if (Platform.isAndroid) {
       return 'http://10.0.2.2:8080';
@@ -122,21 +122,21 @@ class KtorUserService implements IUserService {
     if (user == null) {
       throw Exception('Usuario no autenticado. No se puede crear la casa.');
     }
-    final ownerId = user.uid;
     final url = Uri.parse('$_baseUrl/house');
 
     final requestBody = {
-      'ownerId': ownerId,
-      'lat': house.point.latitude,
-      'lon': house.point.longitude,
+      'ownerId': user.uid,
+      'point': {
+        'lat': house.point.latitude,
+        'lon': house.point.longitude,
+      },
       'title': house.title,
       'price': house.price,
       'bedrooms': house.bedrooms,
       'bathrooms': house.bathrooms,
       'area': house.area,
-      // Nota: No enviamos 'imageUrls' porque tu CreateHouseRequest no lo tiene.
+      'imageUrls': house.imageUrls
     };
-
     print('[KTOR CALL] Enviando a POST $url');
     print('[KTOR CALL] Body: ${json.encode(requestBody)}');
 

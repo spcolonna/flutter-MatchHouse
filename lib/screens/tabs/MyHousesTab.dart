@@ -12,7 +12,7 @@ class MyHousesTab extends StatefulWidget {
 }
 
 class _MyHousesTabState extends State<MyHousesTab> {
-  final IUserService _userService = KtorUserService();
+  final IProfileService _userService = KtorUserService();
   late Future<List<House>> _myHousesFuture;
 
   @override

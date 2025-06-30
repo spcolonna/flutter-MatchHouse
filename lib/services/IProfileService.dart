@@ -1,7 +1,7 @@
 import '../models/House.dart';
 import '../models/UserModel.dart';
 
-abstract class IUserService {
+abstract class IProfileService {
   Future<UserModel> getUserProfile();
   Future<void> createUserProfile(UserModel user);
 

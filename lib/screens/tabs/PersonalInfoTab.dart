@@ -21,7 +21,7 @@ class PersonalInfoTab extends StatefulWidget {
 
 class _PersonalInfoTabState extends State<PersonalInfoTab> {
   final _formKey = GlobalKey<FormState>();
-  final IUserService _userService = KtorUserService();
+  final IProfileService _userService = KtorUserService();
 
   late TextEditingController _nameController;
   late TextEditingController _phoneController;

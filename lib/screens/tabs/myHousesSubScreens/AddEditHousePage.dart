@@ -1,12 +1,21 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:uuid/uuid.dart';
+import 'package:dotted_border/dotted_border.dart';
+
+// Modelos y Servicios
 import 'package:matchhouse_flutter/models/House.dart';
+import 'package:matchhouse_flutter/services/IProfileService.dart';
+import 'package:matchhouse_flutter/services/KtorUserService.dart';
+import 'package:matchhouse_flutter/services/StorageService.dart';
+
+// Sub-pantallas
 import 'package:matchhouse_flutter/screens/tabs/myHousesSubScreens/MapPickerPage.dart';
-import 'package:matchhouse_flutter/services/IProfileService.dart'; // Importamos la interfaz
-import 'package:matchhouse_flutter/services/KtorUserService.dart'; // y la implementación
 
 class AddEditHousePage extends StatefulWidget {
-  final House? house;
+  final House? house; // Si es null, estamos creando. Si no, editando.
 
   const AddEditHousePage({super.key, this.house});
 
@@ -16,16 +25,25 @@ class AddEditHousePage extends StatefulWidget {
 
 class _AddEditHousePageState extends State<AddEditHousePage> {
   final _formKey = GlobalKey<FormState>();
-  final IUserService _userService = KtorUserService();
+  // En una refactorización futura, podrías tener un IHouseService separado
+  final IProfileService _userService = KtorUserService();
+  final StorageService _storageService = StorageService();
   bool _isSaving = false;
 
+  // Controladores para los campos de texto
   late TextEditingController _titleController;
   late TextEditingController _priceController;
   late TextEditingController _bedroomsController;
   late TextEditingController _bathroomsController;
   late TextEditingController _areaController;
-
   LatLng? _selectedLocation;
+
+  // Estado para las imágenes
+  final ImagePicker _picker = ImagePicker();
+  XFile? _newCoverImageFile;
+  String? _existingCoverImageUrl;
+  final List<XFile> _newAdditionalImageFiles = [];
+  final List<String> _existingAdditionalImageUrls = [];
 
   @override
   void initState() {
@@ -36,15 +54,30 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
     _bathroomsController = TextEditingController(text: widget.house?.bathrooms.toString() ?? '');
     _areaController = TextEditingController(text: widget.house?.area.toString() ?? '');
     _selectedLocation = widget.house?.point;
+
+    // Lógica para poblar el estado con las imágenes existentes si estamos editando
+    if (widget.house != null && widget.house!.imageUrls.isNotEmpty) {
+      _existingCoverImageUrl = widget.house!.imageUrls.first;
+      _existingAdditionalImageUrls.addAll(widget.house!.imageUrls.skip(1));
+    }
   }
 
-  void _pickLocationOnMap() async {
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _priceController.dispose();
+    _bedroomsController.dispose();
+    _bathroomsController.dispose();
+    _areaController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickLocationOnMap() async {
     final pickedLocation = await Navigator.of(context).push<LatLng>(
       MaterialPageRoute(
         builder: (context) => MapPickerPage(initialLocation: _selectedLocation),
       ),
     );
-
     if (pickedLocation != null) {
       setState(() {
         _selectedLocation = pickedLocation;
@@ -52,52 +85,96 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
     }
   }
 
+  Future<void> _pickCoverImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (image != null) {
+      setState(() {
+        _newCoverImageFile = image;
+        // Si había una imagen existente, la reemplazamos con la nueva
+        _existingCoverImageUrl = null;
+      });
+    }
+  }
+
+  Future<void> _pickAdditionalImages() async {
+    final int currentTotal = _existingAdditionalImageUrls.length + _newAdditionalImageFiles.length;
+    final int remainingSlots = 6 - currentTotal;
+    if (remainingSlots <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ya has alcanzado el límite de 6 fotos adicionales.')),
+      );
+      return;
+    }
+
+    final List<XFile> images = await _picker.pickMultiImage(imageQuality: 80);
+    if (images.isNotEmpty) {
+      setState(() {
+        _newAdditionalImageFiles.addAll(images.take(remainingSlots));
+      });
+    }
+  }
+
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate() && !_isSaving) {
-      if (_selectedLocation == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Por favor, selecciona una ubicación en el mapa.')),
-        );
-        return;
+    if (!_formKey.currentState!.validate() || _isSaving) return;
+
+    if ((_newCoverImageFile == null && _existingCoverImageUrl == null) || _selectedLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, completa la foto de portada y la ubicación.')),
+      );
+      return;
+    }
+
+    setState(() { _isSaving = true; });
+
+    try {
+      final houseId = widget.house?.id ?? const Uuid().v4();
+      List<String> finalImageUrls = [];
+
+      // Subimos la nueva foto de portada si el usuario seleccionó una
+      if (_newCoverImageFile != null) {
+        final imageUrl = await _storageService.uploadImage(_newCoverImageFile!, 'houses/$houseId/cover_${_newCoverImageFile!.name}');
+        finalImageUrls.add(imageUrl);
+      } else if (_existingCoverImageUrl != null) {
+        finalImageUrls.add(_existingCoverImageUrl!);
       }
 
-      setState(() { _isSaving = true; });
+      // Subimos las nuevas fotos adicionales
+      for (final imageFile in _newAdditionalImageFiles) {
+        final imageUrl = await _storageService.uploadImage(imageFile, 'houses/$houseId/additional_${imageFile.name}');
+        finalImageUrls.add(imageUrl);
+      }
+      // Y mantenemos las existentes que no se hayan eliminado
+      finalImageUrls.addAll(_existingAdditionalImageUrls);
 
-      try {
-        final houseData = House(
-          id: widget.house?.id ?? '',
-          title: _titleController.text.trim(),
-          price: int.tryParse(_priceController.text) ?? 0,
-          bedrooms: int.tryParse(_bedroomsController.text) ?? 0,
-          bathrooms: int.tryParse(_bathroomsController.text) ?? 0,
-          area: double.tryParse(_areaController.text) ?? 0.0,
-          point: _selectedLocation!,
-          imageUrls: widget.house?.imageUrls ?? [],
-        );
+      final houseData = House(
+        id: houseId,
+        title: _titleController.text.trim(),
+        price: int.tryParse(_priceController.text) ?? 0,
+        bedrooms: int.tryParse(_bedroomsController.text) ?? 0,
+        bathrooms: int.tryParse(_bathroomsController.text) ?? 0,
+        area: double.tryParse(_areaController.text) ?? 0.0,
+        point: _selectedLocation!,
+        imageUrls: finalImageUrls,
+      );
 
-        if (widget.house == null) {
-          await _userService.createHouse(houseData);
-        } else {
-          await _userService.updateHouse(houseData);
-        }
+      // Llamamos al servicio para enviar los datos a Ktor
+      if (widget.house == null) {
+        await _userService.createHouse(houseData);
+      } else {
+        await _userService.updateHouse(houseData);
+      }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Propiedad guardada con éxito!')),
-          );
-          Navigator.of(context).pop(true);
-        }
-
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al guardar: ${e.toString()}')),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() { _isSaving = false; });
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Propiedad guardada con éxito!')));
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al guardar: ${e.toString()}')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() { _isSaving = false; });
       }
     }
   }
@@ -110,8 +187,8 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
         actions: [
           if (_isSaving)
             const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white)),
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Center(child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white))),
             )
           else
             IconButton(onPressed: _submitForm, icon: const Icon(Icons.save))
@@ -122,17 +199,29 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(controller: _titleController, decoration: const InputDecoration(labelText: 'Título *'), validator: (v) => v!.isEmpty ? 'Requerido' : null),
-            TextFormField(controller: _priceController, decoration: const InputDecoration(labelText: 'Precio *'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Requerido' : null),
-            TextFormField(controller: _bedroomsController, decoration: const InputDecoration(labelText: 'Dormitorios *'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Requerido' : null),
-            TextFormField(controller: _bathroomsController, decoration: const InputDecoration(labelText: 'Baños *'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Requerido' : null),
-            TextFormField(controller: _areaController, decoration: const InputDecoration(labelText: 'Área (m²) *'), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Requerido' : null),
+            const Text('Foto de Portada *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 8),
+            _buildCoverImagePicker(),
+            const SizedBox(height: 24),
+            const Text('Fotos Adicionales (hasta 6)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 8),
+            _buildAdditionalImagesGrid(),
+            const SizedBox(height: 24),
+            TextFormField(controller: _titleController, decoration: const InputDecoration(labelText: 'Título *', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'Requerido' : null),
+            const SizedBox(height: 16),
+            TextFormField(controller: _priceController, decoration: const InputDecoration(labelText: 'Precio *', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Requerido' : null),
+            const SizedBox(height: 16),
+            TextFormField(controller: _bedroomsController, decoration: const InputDecoration(labelText: 'Dormitorios *', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Requerido' : null),
+            const SizedBox(height: 16),
+            TextFormField(controller: _bathroomsController, decoration: const InputDecoration(labelText: 'Baños *', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Requerido' : null),
+            const SizedBox(height: 16),
+            TextFormField(controller: _areaController, decoration: const InputDecoration(labelText: 'Área (m²) *', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Requerido' : null),
             const SizedBox(height: 20),
             const Text('Ubicación *', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(12)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -147,9 +236,114 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
                   ElevatedButton(onPressed: _pickLocationOnMap, child: const Text('Elegir en Mapa'))
                 ],
               ),
-            )
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCoverImagePicker() {
+    Widget imageContent;
+    if (_newCoverImageFile != null) {
+      imageContent = Image.file(File(_newCoverImageFile!.path), fit: BoxFit.cover);
+    } else if (_existingCoverImageUrl != null) {
+      imageContent = Image.network(_existingCoverImageUrl!, fit: BoxFit.cover);
+    } else {
+      imageContent = const Center(child: Icon(Icons.add_a_photo, size: 50, color: Colors.grey));
+    }
+
+    return GestureDetector(
+      onTap: _pickCoverImage,
+      child: Container(
+        height: 200,
+        width: double.infinity,
+        clipBehavior: Clip.hardEdge,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade400),
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.grey.shade200,
+        ),
+        child: imageContent,
+      ),
+    );
+  }
+
+  Widget _buildAdditionalImagesGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _existingAdditionalImageUrls.length + _newAdditionalImageFiles.length + 1,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemBuilder: (context, index) {
+        // Mostramos las imágenes existentes primero
+        if (index < _existingAdditionalImageUrls.length) {
+          final imageUrl = _existingAdditionalImageUrls[index];
+          return _buildImageThumbnail(Image.network(imageUrl, fit: BoxFit.cover), () {
+            setState(() => _existingAdditionalImageUrls.removeAt(index));
+          });
+        }
+        // Luego las nuevas imágenes seleccionadas
+        final newImageIndex = index - _existingAdditionalImageUrls.length;
+        if (newImageIndex < _newAdditionalImageFiles.length) {
+          final imageFile = _newAdditionalImageFiles[newImageIndex];
+          return _buildImageThumbnail(Image.file(File(imageFile.path), fit: BoxFit.cover), () {
+            setState(() => _newAdditionalImageFiles.removeAt(newImageIndex));
+          });
+        }
+
+
+        if (index == _existingAdditionalImageUrls.length + _newAdditionalImageFiles.length) {
+          final currentTotal = _existingAdditionalImageUrls.length + _newAdditionalImageFiles.length;
+          if (currentTotal < 6) {
+
+            return GestureDetector(
+              onTap: _pickAdditionalImages,
+              child: DottedBorder(
+                options: RoundedRectDottedBorderOptions(
+                  color: Colors.grey.shade600,
+                  strokeWidth: 2,
+                  dashPattern: const [6, 4],
+                  radius: Radius.circular(12),
+                ),
+                child: const Center(
+                  child: Icon(Icons.add, color: Colors.grey, size: 40),
+                ),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }
+      },
+    );
+  }
+
+  Widget _buildImageThumbnail(Widget image, VoidCallback onDelete) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          image,
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: onDelete,
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.black54,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.close, color: Colors.white, size: 18),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
