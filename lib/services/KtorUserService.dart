@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart' hide User;
 import '../enums/UserRole.dart';
 import '../models/House.dart';
+import '../models/SearchFilterModel.dart';
 import '../models/UserModel.dart';
 import 'interfaces/IProfileService.dart';
 
@@ -175,5 +176,38 @@ class KtorUserService implements IProfileService {
     await Future.delayed(const Duration(seconds: 1));
     // Aquí iría la llamada http.delete a Ktor
     print('Éxito!');
+  }
+
+  @override
+  Future<void> saveFilters(SearchFilterModel filters) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('Usuario no autenticado. No se pueden guardar los filtros.');
+    }
+
+    final url = Uri.parse('$_baseUrl/users/${user.uid}/filters');
+
+    final headers = {'Content-Type': 'application/json; charset=UTF-8'};
+    final body = json.encode(filters.toMap());
+
+    print('[KTOR SAVE FILTERS] Enviando a $url');
+    print('[KTOR SAVE FILTERS] Body: $body');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        throw Exception('Error del servidor al guardar los filtros: ${response.body}');
+      }
+
+      print('Filtros guardados exitosamente en el servidor.');
+
+    } catch (e) {
+      throw Exception('Error de red al guardar los filtros: ${e.toString()}');
+    }
   }
 }

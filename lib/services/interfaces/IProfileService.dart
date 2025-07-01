@@ -1,4 +1,5 @@
 import '../../models/House.dart';
+import '../../models/SearchFilterModel.dart';
 import '../../models/UserModel.dart';
 
 abstract class IProfileService {
@@ -13,4 +14,6 @@ abstract class IProfileService {
   Future<List<House>> getFavoriteHouses();
   Future<void> addFavorite(String houseId);
   Future<void> removeFavorite(String houseId);
+
+  Future<void> saveFilters(SearchFilterModel filters);
 }

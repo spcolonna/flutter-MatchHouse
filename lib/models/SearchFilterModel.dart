@@ -18,4 +18,17 @@ class SearchFilterModel {
     this.minBathrooms = 0,
     this.minArea = 0,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'country': country,
+      'department': department,
+      'neighborhood': neighborhood,
+      'minPrice': minPrice,
+      'maxPrice': maxPrice,
+      'minBedrooms': minBedrooms,
+      'minBathrooms': minBathrooms,
+      'minArea': minArea,
+    };
+  }
 }
