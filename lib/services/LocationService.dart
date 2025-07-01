@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:location/location.dart';
 import 'package:latlong2/latlong.dart';
-import 'IHouseService.dart';
+import 'interfaces/IHouseService.dart';
 
 class LocationService {
   StreamSubscription<LocationData>? _positionStreamSubscription;

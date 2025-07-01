@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:matchhouse_flutter/models/House.dart';
 import 'package:matchhouse_flutter/screens/tabs/myHousesSubScreens/AddEditHousePage.dart';
-import 'package:matchhouse_flutter/services/IProfileService.dart';
+import 'package:matchhouse_flutter/services/interfaces/IProfileService.dart';
 import 'package:matchhouse_flutter/services/KtorUserService.dart';
 
 class MyHousesTab extends StatefulWidget {

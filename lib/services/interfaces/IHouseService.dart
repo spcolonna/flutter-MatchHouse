@@ -1,5 +1,5 @@
 import 'package:latlong2/latlong.dart';
-import '../models/House.dart';
+import '../../models/House.dart';
 
 abstract class IHouseService {
   Future<List<House>> getAllHouses();

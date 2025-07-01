@@ -7,7 +7,7 @@ import 'package:dotted_border/dotted_border.dart';
 
 // Modelos y Servicios
 import 'package:matchhouse_flutter/models/House.dart';
-import 'package:matchhouse_flutter/services/IProfileService.dart';
+import 'package:matchhouse_flutter/services/interfaces/IProfileService.dart';
 import 'package:matchhouse_flutter/services/KtorUserService.dart';
 import 'package:matchhouse_flutter/services/StorageService.dart';
 

@@ -1,5 +1,5 @@
-import '../models/House.dart';
-import '../models/UserModel.dart';
+import '../../models/House.dart';
+import '../../models/UserModel.dart';
 
 abstract class IProfileService {
   Future<UserModel> getUserProfile();

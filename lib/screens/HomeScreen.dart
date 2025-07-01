@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/House.dart';
 import '../models/UserModel.dart';
-import '../services/IProfileService.dart';
 import '../services/KtorUserService.dart';
+import '../services/interfaces/IProfileService.dart';
 import 'FavoritesPage.dart';
 import 'ProfilePage.dart';
 import 'discover_page.dart';

@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide User;
 import '../enums/UserRole.dart';
 import '../models/House.dart';
 import '../models/UserModel.dart';
-import 'IProfileService.dart';
+import 'interfaces/IProfileService.dart';
 
 class KtorUserService implements IProfileService {
   String get _baseUrl {

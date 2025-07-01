@@ -5,7 +5,7 @@ import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../models/House.dart';
-import '../services/IHouseService.dart';
+import '../services/interfaces/IHouseService.dart';
 import '../services/KtorHouseService.dart';
 import '../widgets/NearbyHouseCard.dart';
 import '../widgets/DiscoveryCard.dart';

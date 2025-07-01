@@ -2,11 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart' hide User;
-import 'package:matchhouse_flutter/services/IHouseService.dart';
-import '../enums/UserRole.dart';
+import 'package:matchhouse_flutter/services/interfaces/IHouseService.dart';
 import '../models/House.dart';
-import '../models/UserModel.dart';
-import 'IProfileService.dart';
 import 'package:latlong2/latlong.dart';
 
 class KtorHouseService implements IHouseService {
