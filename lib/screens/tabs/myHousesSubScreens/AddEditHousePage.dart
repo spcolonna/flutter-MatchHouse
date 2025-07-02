@@ -214,7 +214,11 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
 
       // Subimos la nueva foto de portada si el usuario seleccionó una
       if (_newCoverImageFile != null) {
-        final imageUrl = await _storageService.uploadImage(_newCoverImageFile!, 'houses/$houseId/cover_${_newCoverImageFile!.name}');
+        final fileExtension = _newCoverImageFile!.path.split('.').last;
+        final fileName = 'cover_${const Uuid().v4()}.$fileExtension';
+        final path = 'houses/$houseId/$fileName';
+
+        final imageUrl = await _storageService.uploadImage(_newCoverImageFile!, path);
         finalImageUrls.add(imageUrl);
       } else if (_existingCoverImageUrl != null) {
         finalImageUrls.add(_existingCoverImageUrl!);
@@ -222,7 +226,11 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
 
       // Subimos las nuevas fotos adicionales
       for (final imageFile in _newAdditionalImageFiles) {
-        final imageUrl = await _storageService.uploadImage(imageFile, 'houses/$houseId/additional_${imageFile.name}');
+        final fileExtension = imageFile.path.split('.').last;
+        final fileName = 'additional_${const Uuid().v4()}.$fileExtension';
+        final path = 'houses/$houseId/$fileName';
+
+        final imageUrl = await _storageService.uploadImage(imageFile, path);
         finalImageUrls.add(imageUrl);
       }
       // Y mantenemos las existentes que no se hayan eliminado

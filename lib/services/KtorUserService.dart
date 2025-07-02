@@ -136,7 +136,10 @@ class KtorUserService implements IProfileService {
       'bedrooms': house.bedrooms,
       'bathrooms': house.bathrooms,
       'area': house.area,
-      'imageUrls': house.imageUrls
+      'imageUrls': house.imageUrls,
+      'country': house.country,
+      'department': house.department,
+      'neighborhood': house.neighborhood
     };
     print('[KTOR CALL] Enviando a POST $url');
     print('[KTOR CALL] Body: ${json.encode(requestBody)}');

@@ -30,8 +30,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     try {
       // Usamos el email y la contraseña de los controladores
-      final email = _emailController.text.trim();
-      final password = _passwordController.text.trim();
+      // final email = _emailController.text.trim();
+      // final password = _passwordController.text.trim();
+      //TODO: SACAR
+      final email = "seba@mail.com";
+      final password = "123456";
+
 
       // PASO 1: Intentamos hacer login directamente con Firebase
       final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
