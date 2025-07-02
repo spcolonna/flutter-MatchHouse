@@ -210,4 +210,30 @@ class KtorUserService implements IProfileService {
       throw Exception('Error de red al guardar los filtros: ${e.toString()}');
     }
   }
+
+  @override
+  Future<SearchFilterModel> getUserFilters() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('Usuario no autenticado. No se pueden guardar los filtros.');
+    }
+
+    final url = Uri.parse('$_baseUrl/users/${user.uid}/filters');
+
+    try {
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return SearchFilterModel.fromMap(json.decode(response.body));
+      } else if (response.statusCode == 404) {
+        print("No se encontraron filtros en el servidor. Usando valores por defecto.");
+        return SearchFilterModel();
+      } else {
+        throw Exception('Error del servidor al cargar los filtros: ${response.body}');
+      }
+    } catch (e) {
+      print("Error de conexión al obtener filtros: $e");
+      throw Exception('No se pudo conectar al servidor para obtener los filtros.');
+    }
+  }
 }

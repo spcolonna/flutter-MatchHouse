@@ -3,18 +3,21 @@ import 'package:matchhouse_flutter/models/SearchFilterModel.dart';
 import 'package:matchhouse_flutter/services/interfaces/ILocationService.dart';
 import 'package:matchhouse_flutter/services/KtorLocationService.dart';
 
-import '../../services/KtorUserService.dart';
-import '../../services/interfaces/IProfileService.dart';
-
 class SearchFiltersTab extends StatefulWidget {
-  const SearchFiltersTab({super.key});
+  final SearchFilterModel filters;
+  final Future<void> Function(SearchFilterModel newFilters) onSave;
+
+  const SearchFiltersTab({
+    super.key,
+    required this.filters,
+    required this.onSave
+  });
   @override
   State<SearchFiltersTab> createState() => _SearchFiltersTabState();
 }
 
 class _SearchFiltersTabState extends State<SearchFiltersTab> {
   final ILocationService _locationService = KtorLocationService();
-  final IProfileService _profileService = KtorUserService();
   late SearchFilterModel _filters;
   bool _isSaving = false;
 
@@ -33,7 +36,10 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
   @override
   void initState() {
     super.initState();
-    _filters = SearchFilterModel();
+    _filters = widget.filters;
+    _selectedCountry = _filters.country;
+    _selectedDepartment = _filters.department;
+    _selectedNeighborhood = _filters.neighborhood;
     _loadInitialCountries();
   }
 
@@ -43,11 +49,11 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
       if (mounted) {
         setState(() {
           _availableCountries = countries;
-          if (_availableCountries.isNotEmpty) {
-            final uruguay = _availableCountries.firstWhere((c) => c == 'Uruguay', orElse: () => _availableCountries.first);
-            _onCountrySelected(uruguay);
-          }
           _isLoadingCountries = false;
+          // Si ya hay un país seleccionado (porque venía guardado), cargamos sus departamentos
+          if (_selectedCountry != null) {
+            _onCountrySelected(_selectedCountry, initialLoad: true);
+          }
         });
       }
     } catch (e) {
@@ -56,25 +62,34 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
     }
   }
 
-  Future<void> _onCountrySelected(String? country) async {
+  Future<void> _onCountrySelected(String? country, {bool initialLoad = false}) async {
     if (country == null) return;
+
     setState(() {
       _selectedCountry = country;
       _filters.country = country;
       _isLoadingDepartments = true;
-      _selectedDepartment = null;
-      _filters.department = null;
+      // Si no es la carga inicial, reseteamos las selecciones dependientes
+      if (!initialLoad) {
+        _selectedDepartment = null;
+        _filters.department = null;
+        _selectedNeighborhood = null;
+        _filters.neighborhood = null;
+      }
       _availableDepartments = [];
-      _selectedNeighborhood = null;
-      _filters.neighborhood = null;
       _availableNeighborhoods = [];
     });
+
     try {
       final departments = await _locationService.getDepartments(country);
       if (mounted) {
         setState(() {
           _availableDepartments = departments;
           _isLoadingDepartments = false;
+          // Si es la carga inicial y ya hay un departamento guardado, lo seleccionamos
+          if (initialLoad && _selectedDepartment != null) {
+            _onDepartmentSelected(_selectedDepartment, initialLoad: true);
+          }
         });
       }
     } catch (e) {
@@ -83,16 +98,20 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
     }
   }
 
-  Future<void> _onDepartmentSelected(String? department) async {
+  Future<void> _onDepartmentSelected(String? department, {bool initialLoad = false}) async {
     if (department == null || _selectedCountry == null) return;
+
     setState(() {
       _selectedDepartment = department;
       _filters.department = department;
       _isLoadingNeighborhoods = true;
+      if (!initialLoad) {
+        _selectedNeighborhood = null;
+        _filters.neighborhood = null;
+      }
       _availableNeighborhoods = [];
-      _selectedNeighborhood = null;
-      _filters.neighborhood = null;
     });
+
     try {
       final neighborhoods = await _locationService.getNeighborhoods(_selectedCountry!, department);
       if (mounted) {
@@ -109,14 +128,10 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
 
   void _activateFilters() async {
     if (_isSaving) return;
-
-    setState(() {
-      _isSaving = true;
-    });
+    setState(() { _isSaving = true; });
 
     try {
-      await _profileService.saveFilters(_filters);
-
+      await widget.onSave(_filters);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Filtros guardados con éxito')),
@@ -130,9 +145,7 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
+        setState(() { _isSaving = false; });
       }
     }
   }
@@ -141,15 +154,11 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
   void _clearFilters() {
     setState(() {
       _filters = SearchFilterModel();
-      if (_availableCountries.isNotEmpty) {
-        _selectedCountry = _availableCountries.firstWhere((c) => c == 'Uruguay', orElse: () => _availableCountries.first);
+      _selectedCountry = _filters.country;
+      _selectedDepartment = _filters.department;
+      _selectedNeighborhood = _filters.neighborhood;
+      if (_selectedCountry != null) {
         _onCountrySelected(_selectedCountry);
-      } else {
-        _selectedCountry = null;
-        _selectedDepartment = null;
-        _selectedNeighborhood = null;
-        _availableDepartments = [];
-        _availableNeighborhoods = [];
       }
     });
   }
@@ -165,11 +174,11 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
         padding: const EdgeInsets.all(16.0),
         children: [
           _buildSectionTitle('Ubicación'),
-          _buildDropdown<String>(_selectedCountry, _availableCountries, _onCountrySelected, 'País', (c) => c),
+          _buildDropdown<String>(_selectedCountry, _availableCountries, (value) => _onCountrySelected(value), 'País', (c) => c),
           const Divider(),
           _isLoadingDepartments
               ? const Padding(padding: EdgeInsets.all(8.0), child: Center(child: CircularProgressIndicator()))
-              : _buildDropdown<String>(_selectedDepartment, _availableDepartments, _onDepartmentSelected, 'Departamento', (d) => d, enabled: _selectedCountry != null),
+              : _buildDropdown<String>(_selectedDepartment, _availableDepartments, (value) => _onDepartmentSelected(value), 'Departamento', (d) => d, enabled: _selectedCountry != null),
           const Divider(),
           _isLoadingNeighborhoods
               ? const Padding(padding: EdgeInsets.all(8.0), child: Center(child: CircularProgressIndicator()))
@@ -180,18 +189,13 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
             });
           }, 'Barrio', (name) => name, enabled: _selectedDepartment != null),
           const SizedBox(height: 24),
-
-          // --- NUEVO: SECCIONES DE FILTROS RESTAURADAS ---
           _buildSectionTitle('Rango de Precio'),
           RangeSlider(
             min: 0,
             max: 1000000,
             divisions: 100,
             values: RangeValues(_filters.minPrice, _filters.maxPrice),
-            labels: RangeLabels(
-              '\$${_filters.minPrice.round()}',
-              '\$${_filters.maxPrice.round()}',
-            ),
+            labels: RangeLabels('\$${_filters.minPrice.round()}', '\$${_filters.maxPrice.round()}'),
             onChanged: (values) {
               setState(() {
                 _filters.minPrice = values.start;
@@ -203,14 +207,10 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('\$${_filters.minPrice.toInt()}'),
-                Text('\$${_filters.maxPrice.toInt()}'),
-              ],
+              children: [Text('\$${_filters.minPrice.toInt()}'), Text('\$${_filters.maxPrice.toInt()}')],
             ),
           ),
           const SizedBox(height: 24),
-
           _buildSectionTitle('Características'),
           _buildCounter('Mínimo de Dormitorios', Icons.bed_outlined, _filters.minBedrooms, (newValue) {
             setState(() => _filters.minBedrooms = newValue);
@@ -230,10 +230,7 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
         child: Row(
           children: [
             Expanded(
-              child: OutlinedButton(
-                onPressed: _clearFilters,
-                child: const Text('Limpiar'),
-              ),
+              child: OutlinedButton(onPressed: _clearFilters, child: const Text('Limpiar')),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -243,7 +240,9 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
                   backgroundColor: Colors.deepPurple,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Activar Filtros'),
+                child: _isSaving
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Activar Filtros'),
               ),
             ),
           ],

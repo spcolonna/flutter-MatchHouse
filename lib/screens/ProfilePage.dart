@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:matchhouse_flutter/models/SearchFilterModel.dart';
 import 'package:matchhouse_flutter/models/UserModel.dart';
 import 'package:matchhouse_flutter/screens/tabs/PersonalInfoTab.dart';
 import 'package:matchhouse_flutter/screens/tabs/SearchFiltersTab.dart';
@@ -6,12 +7,16 @@ import 'package:matchhouse_flutter/screens/tabs/MyHousesTab.dart';
 
 class ProfilePage extends StatefulWidget {
   final UserModel user;
+  final SearchFilterModel filters;
   final Future<void> Function() onProfileUpdated;
+  final Future<void> Function(SearchFilterModel newFilters) onFiltersSaved;
 
   const ProfilePage({
     super.key,
     required this.user,
-    required this.onProfileUpdated
+    required this.filters,
+    required this.onProfileUpdated,
+    required this.onFiltersSaved
   });
 
   @override
@@ -57,7 +62,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         controller: _tabController,
         children: [
           PersonalInfoTab(user: widget.user, onProfileUpdated: widget.onProfileUpdated),
-          SearchFiltersTab(),
+          SearchFiltersTab(filters: widget.filters, onSave: widget.onFiltersSaved,),
           MyHousesTab(),
         ],
       ),

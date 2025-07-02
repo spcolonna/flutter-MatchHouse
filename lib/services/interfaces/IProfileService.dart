@@ -16,4 +16,5 @@ abstract class IProfileService {
   Future<void> removeFavorite(String houseId);
 
   Future<void> saveFilters(SearchFilterModel filters);
+  Future<SearchFilterModel> getUserFilters();
 }

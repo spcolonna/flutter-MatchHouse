@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/House.dart';
+import '../models/SearchFilterModel.dart';
 import '../models/UserModel.dart';
 import '../services/KtorUserService.dart';
 import '../services/interfaces/IProfileService.dart';
@@ -20,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final IProfileService _userService = KtorUserService();
 
   UserModel? _userProfile;
+  SearchFilterModel? _userFilters;
   bool _isLoadingProfile = true;
   List<House> _favoriteHouses = [];
 
@@ -34,12 +36,14 @@ class _HomeScreenState extends State<HomeScreen> {
       final results = await Future.wait([
         _userService.getUserProfile(),
         _userService.getFavoriteHouses(),
+        _userService.getUserFilters(),
       ]);
 
       if (mounted) {
         setState(() {
           _userProfile = results[0] as UserModel;
           _favoriteHouses = results[1] as List<House>;
+          _userFilters = results[2] as SearchFilterModel;
           _isLoadingProfile = false;
         });
       }
@@ -53,6 +57,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _saveFilters(SearchFilterModel newFilters) async {
+    await _userService.saveFilters(newFilters);
+    setState(() {
+      _userFilters = newFilters;
+    });
+  }
 
   void _toggleFavorite(String houseId) async {
     if (_userProfile == null) {
@@ -99,7 +109,12 @@ class _HomeScreenState extends State<HomeScreen> {
       MapPage(favoriteHouses: _favoriteHouses, onFavoriteToggle: _toggleFavorite),
       FavoritesPage(favoriteHouses: _favoriteHouses, onFavoriteToggle: _toggleFavorite),
       if (_userProfile != null)
-        ProfilePage(user: _userProfile!, onProfileUpdated: _loadUserData)
+        ProfilePage(
+            user: _userProfile!,
+            filters: _userFilters!,
+            onProfileUpdated: _loadUserData,
+            onFiltersSaved: _saveFilters,
+        )
       else if (_isLoadingProfile)
         const Center(child: CircularProgressIndicator())
       else
