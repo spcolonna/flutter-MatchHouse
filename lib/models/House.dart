@@ -7,13 +7,19 @@ class House {
   final double area;
   final LatLng point;
   final List<String> imageUrls;
+  final String? country;
+  final String? department;
+  final String? neighborhood;
 
 
   House({
     required this.id, required this.title, required this.price,
     required this.bedrooms, required this.bathrooms, required this.area,
     required this.point,
-    this.imageUrls = const []
+    this.imageUrls = const [],
+    this.country,
+    this.department,
+    this.neighborhood,
   });
 
   factory House.fromJson(Map<String, dynamic> json) {
@@ -28,7 +34,10 @@ class House {
       bathrooms: json['bathrooms'],
       area: json['area'],
       point: LatLng(pointData['lat'], pointData['lon']),
-      imageUrls: List<String>.from(imagesFromJson)
+      imageUrls: List<String>.from(imagesFromJson),
+      country: json['country'],
+      department: json['department'],
+      neighborhood: json['neighborhood'],
     );
   }
 
@@ -45,6 +54,9 @@ class House {
         'lon': point.longitude,
       },
       'imageUrls': imageUrls,
+      'country': country,
+      'department': department,
+      'neighborhood': neighborhood,
     };
   }
 }

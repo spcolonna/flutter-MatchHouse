@@ -5,14 +5,15 @@ import 'package:latlong2/latlong.dart';
 import 'package:uuid/uuid.dart';
 import 'package:dotted_border/dotted_border.dart';
 
-// Modelos y Servicios
 import 'package:matchhouse_flutter/models/House.dart';
 import 'package:matchhouse_flutter/services/interfaces/IProfileService.dart';
 import 'package:matchhouse_flutter/services/KtorUserService.dart';
 import 'package:matchhouse_flutter/services/StorageService.dart';
 
-// Sub-pantallas
 import 'package:matchhouse_flutter/screens/tabs/myHousesSubScreens/MapPickerPage.dart';
+
+import '../../../services/KtorLocationService.dart';
+import '../../../services/interfaces/ILocationService.dart';
 
 class AddEditHousePage extends StatefulWidget {
   final House? house; // Si es null, estamos creando. Si no, editando.
@@ -25,9 +26,9 @@ class AddEditHousePage extends StatefulWidget {
 
 class _AddEditHousePageState extends State<AddEditHousePage> {
   final _formKey = GlobalKey<FormState>();
-  // En una refactorización futura, podrías tener un IHouseService separado
   final IProfileService _userService = KtorUserService();
   final StorageService _storageService = StorageService();
+  final ILocationService _locationService = KtorLocationService();
   bool _isSaving = false;
 
   // Controladores para los campos de texto
@@ -45,6 +46,14 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
   final List<XFile> _newAdditionalImageFiles = [];
   final List<String> _existingAdditionalImageUrls = [];
 
+  List<String> _availableCountries = [];
+  List<String> _availableDepartments = [];
+  List<String> _availableNeighborhoods = [];
+  String? _selectedCountry;
+  String? _selectedDepartment;
+  String? _selectedNeighborhood;
+  bool _isLoadingLocations = true;
+
   @override
   void initState() {
     super.initState();
@@ -60,6 +69,79 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
       _existingCoverImageUrl = widget.house!.imageUrls.first;
       _existingAdditionalImageUrls.addAll(widget.house!.imageUrls.skip(1));
     }
+
+    _loadInitialLocationData();
+  }
+
+  Future<void> _loadInitialLocationData() async {
+    try {
+      final countries = await _locationService.getAvailableCountries();
+      if (mounted) {
+        setState(() {
+          _availableCountries = countries;
+          // Si estamos editando, pre-seleccionamos los valores guardados
+          if (widget.house != null) {
+            _selectedCountry = widget.house!.country;
+            if (_selectedCountry != null) {
+              _onCountrySelected(_selectedCountry, initialLoad: true);
+            }
+          }
+          _isLoadingLocations = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingLocations = false);
+      print("Error cargando países: $e");
+    }
+  }
+
+  Future<void> _onCountrySelected(String? country, {bool initialLoad = false}) async {
+    if (country == null) return;
+    setState(() {
+      _selectedCountry = country;
+      if (!initialLoad) {
+        _selectedDepartment = null;
+        _selectedNeighborhood = null;
+      }
+      _availableDepartments = [];
+      _availableNeighborhoods = [];
+    });
+    try {
+      final departments = await _locationService.getDepartments(country);
+      if (mounted) {
+        setState(() {
+          _availableDepartments = departments;
+          if (initialLoad && widget.house != null) {
+            _selectedDepartment = widget.house!.department;
+            if (_selectedDepartment != null) {
+              _onDepartmentSelected(_selectedDepartment, initialLoad: true);
+            }
+          }
+        });
+      }
+    } catch (e) { /* ... */ }
+  }
+
+  Future<void> _onDepartmentSelected(String? department, {bool initialLoad = false}) async {
+    if (department == null || _selectedCountry == null) return;
+    setState(() {
+      _selectedDepartment = department;
+      if (!initialLoad) {
+        _selectedNeighborhood = null;
+      }
+      _availableNeighborhoods = [];
+    });
+    try {
+      final neighborhoods = await _locationService.getNeighborhoods(_selectedCountry!, department);
+      if (mounted) {
+        setState(() {
+          _availableNeighborhoods = neighborhoods;
+          if (initialLoad && widget.house != null) {
+            _selectedNeighborhood = widget.house!.neighborhood;
+          }
+        });
+      }
+    } catch (e) { /* ... */ }
   }
 
   @override
@@ -155,6 +237,9 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
         area: double.tryParse(_areaController.text) ?? 0.0,
         point: _selectedLocation!,
         imageUrls: finalImageUrls,
+        country: _selectedCountry,
+        department: _selectedDepartment,
+        neighborhood: _selectedNeighborhood,
       );
 
       // Llamamos al servicio para enviar los datos a Ktor
@@ -217,7 +302,25 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
             const SizedBox(height: 16),
             TextFormField(controller: _areaController, decoration: const InputDecoration(labelText: 'Área (m²) *', border: OutlineInputBorder()), keyboardType: TextInputType.number, validator: (v) => v!.isEmpty ? 'Requerido' : null),
             const SizedBox(height: 20),
-            const Text('Ubicación *', style: TextStyle(fontWeight: FontWeight.bold)),
+
+            const SizedBox(height: 20),
+            const Text('Ubicación de la Propiedad *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 8),
+            if (_isLoadingLocations)
+              const Center(child: CircularProgressIndicator())
+            else
+              Column(
+                children: [
+                  _buildDropdown<String>(_selectedCountry, _availableCountries, (value) => _onCountrySelected(value), 'País'),
+                  const SizedBox(height: 16),
+                  _buildDropdown<String>(_selectedDepartment, _availableDepartments, (value) => _onDepartmentSelected(value), 'Departamento', enabled: _selectedCountry != null),
+                  const SizedBox(height: 16),
+                  _buildDropdown<String>(_selectedNeighborhood, _availableNeighborhoods, (value) { setState(() => _selectedNeighborhood = value); }, 'Barrio', enabled: _selectedDepartment != null),
+                ],
+              ),
+
+            const SizedBox(height: 20),
+            const Text('Pin en el Mapa *', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(12),
@@ -240,6 +343,19 @@ class _AddEditHousePageState extends State<AddEditHousePage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDropdown<T>(T? currentValue, List<T> items, ValueChanged<T?> onChanged, String hint, {bool enabled = true}) {
+    final T? value = (currentValue != null && items.contains(currentValue)) ? currentValue : null;
+    return DropdownButtonFormField<T>(
+      value: value,
+      hint: Text(hint),
+      isExpanded: true,
+      decoration: InputDecoration(border: const OutlineInputBorder()),
+      items: items.map((T item) => DropdownMenuItem<T>(value: item, child: Text(item.toString()))).toList(),
+      onChanged: enabled ? onChanged : null,
+      validator: (value) => value == null ? 'Campo requerido' : null,
     );
   }
 
