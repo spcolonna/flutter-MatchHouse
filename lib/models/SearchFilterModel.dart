@@ -4,9 +4,9 @@ class SearchFilterModel {
   String? neighborhood;
   double minPrice;
   double maxPrice;
-  int minBedrooms;
-  int minBathrooms;
-  int minArea;
+  int bedrooms;
+  int bathrooms;
+  int area;
 
   SearchFilterModel({
     this.country = 'Uruguay',
@@ -14,9 +14,9 @@ class SearchFilterModel {
     this.neighborhood,
     this.minPrice = 0,
     this.maxPrice = 500000,
-    this.minBedrooms = 0,
-    this.minBathrooms = 0,
-    this.minArea = 0,
+    this.bedrooms = 0,
+    this.bathrooms = 0,
+    this.area = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -26,9 +26,9 @@ class SearchFilterModel {
       'neighborhood': neighborhood,
       'minPrice': minPrice,
       'maxPrice': maxPrice,
-      'minBedrooms': minBedrooms,
-      'minBathrooms': minBathrooms,
-      'minArea': minArea,
+      'bedrooms': bedrooms,
+      'bathrooms': bathrooms,
+      'area': area,
     };
   }
 
@@ -39,9 +39,9 @@ class SearchFilterModel {
       neighborhood: map['neighborhood'],
       minPrice: (map['minPrice'] as num?)?.toDouble() ?? 0,
       maxPrice: (map['maxPrice'] as num?)?.toDouble() ?? 500000,
-      minBedrooms: map['minBedrooms'] as int? ?? 0,
-      minBathrooms: map['minBathrooms'] as int? ?? 0,
-      minArea: map['minArea'] as int? ?? 0,
+      bedrooms: map['bedrooms'] as int? ?? 0,
+      bathrooms: map['bathrooms'] as int? ?? 0,
+      area: map['area'] as int? ?? 0,
     );
   }
 }

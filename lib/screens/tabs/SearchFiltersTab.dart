@@ -212,16 +212,16 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
           ),
           const SizedBox(height: 24),
           _buildSectionTitle('Características'),
-          _buildCounter('Mínimo de Dormitorios', Icons.bed_outlined, _filters.minBedrooms, (newValue) {
-            setState(() => _filters.minBedrooms = newValue);
+          _buildCounter('Mínimo de Dormitorios', Icons.bed_outlined, _filters.bedrooms, (newValue) {
+            setState(() => _filters.bedrooms = newValue);
           }),
           const Divider(),
-          _buildCounter('Mínimo de Baños', Icons.shower_outlined, _filters.minBathrooms, (newValue) {
-            setState(() => _filters.minBathrooms = newValue);
+          _buildCounter('Mínimo de Baños', Icons.shower_outlined, _filters.bathrooms, (newValue) {
+            setState(() => _filters.bathrooms = newValue);
           }),
           const Divider(),
-          _buildCounter('Mínimo de Área (m²)', Icons.square_foot_outlined, _filters.minArea, (newValue) {
-            setState(() => _filters.minArea = newValue);
+          _buildCounter('Mínimo de Área (m²)', Icons.square_foot_outlined, _filters.area, (newValue) {
+            setState(() => _filters.area = newValue);
           }),
         ],
       ),
@@ -252,8 +252,12 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
   }
 
   Widget _buildDropdown<T>(T? currentValue, List<T> items, ValueChanged<T?> onChanged, String hint, String Function(T) itemText, {bool enabled = true}) {
+    // Verificamos si el valor actual está en la lista de items.
+    // Si no está, usamos null para que se muestre el hint.
+    final T? value = (currentValue != null && items.contains(currentValue)) ? currentValue : null;
+
     return DropdownButtonFormField<T>(
-      value: currentValue,
+      value: value,
       hint: Text(hint),
       isExpanded: true,
       decoration: InputDecoration(
@@ -263,10 +267,10 @@ class _SearchFiltersTabState extends State<SearchFiltersTab> {
           color: enabled ? Colors.black54 : Colors.grey.shade400,
         ),
       ),
-      items: items.map((T value) {
+      items: items.map((T item) {
         return DropdownMenuItem<T>(
-          value: value,
-          child: Text(itemText(value)),
+          value: item,
+          child: Text(itemText(item)),
         );
       }).toList(),
       onChanged: enabled ? onChanged : null,

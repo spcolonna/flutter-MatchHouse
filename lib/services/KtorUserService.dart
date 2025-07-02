@@ -185,7 +185,7 @@ class KtorUserService implements IProfileService {
       throw Exception('Usuario no autenticado. No se pueden guardar los filtros.');
     }
 
-    final url = Uri.parse('$_baseUrl/users/${user.uid}/filters');
+    final url = Uri.parse('$_baseUrl/user/${user.uid}/filters');
 
     final headers = {'Content-Type': 'application/json; charset=UTF-8'};
     final body = json.encode(filters.toMap());
@@ -218,7 +218,7 @@ class KtorUserService implements IProfileService {
       throw Exception('Usuario no autenticado. No se pueden guardar los filtros.');
     }
 
-    final url = Uri.parse('$_baseUrl/users/${user.uid}/filters');
+    final url = Uri.parse('$_baseUrl/user/${user.uid}/filters');
 
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
