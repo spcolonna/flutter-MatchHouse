@@ -31,7 +31,7 @@ class _MapPickerPageState extends State<MapPickerPage> {
               initialZoom: 15.0,
             ),
             children: [
-              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',userAgentPackageName: 'com.example.matchhouse_flutter'),
             ],
           ),
           // Pin central fijo
